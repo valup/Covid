@@ -8,28 +8,30 @@
 
 LTree cargar_dataset(Fechas* tabla, LTree lt, char* archivo, struct tm** lims) {
   FILE* fp;
-  struct tm* f;
-  fp = fopen(archivo, "a");
-  fprintf(fp, "\n");
-  fclose(fp);
+  struct tm* f = NULL;
 
   if ((fp = fopen(archivo, "r"))) {
     char* buf = NULL;
     size_t s = 1;
-    if (!(getline(&buf, &s, fp))) {
+
+    getline(&buf, &s, fp);
+    if (feof(fp)) {
       printf("\nERROR: Archivo vacio.\n");
       printf("Ingrese help para mas informacion\n\n");
+      free(buf);
+      fclose(fp);
       return lt;
     }
     int lim = 0, orden = 0;
 
     getline(&buf, &s, fp);
-    while (buf[0] != '\n') {
+    while (!feof(fp)) {
       char* fecha = strtok(buf, "T");
       f = string_fecha(strim(fecha));
       if (!f) {
         printf("\nERROR: Error de datos. No se pudo cargar toda la tabla.\n\n");
         free(buf);
+        fclose(fp);
         return lt;
       }
 
@@ -38,12 +40,16 @@ LTree cargar_dataset(Fechas* tabla, LTree lt, char* archivo, struct tm** lims) {
       if (strim(depto)[0] == '\0') {
         printf("\nERROR: Error de datos. No se pudo cargar toda la tabla.\n\n");
         free(buf);
+        free(f);
+        fclose(fp);
         return lt;
       }
       char* local = strtok(NULL, ",");
       if (strim(local)[0] == '\0') {
         printf("\nERROR: Error de datos. No se pudo cargar toda la tabla.\n\n");
         free(buf);
+        free(f);
+        fclose(fp);
         return lt;
       }
       char* cuenta = strtok(NULL, "\n");
@@ -54,6 +60,8 @@ LTree cargar_dataset(Fechas* tabla, LTree lt, char* archivo, struct tm** lims) {
         printf("\nERROR: Error de datos. No se pudo cargar toda la tabla.\n\n");
         free(notifs);
         free(buf);
+        free(f);
+        fclose(fp);
         return lt;
       }
 
@@ -74,14 +82,19 @@ LTree cargar_dataset(Fechas* tabla, LTree lt, char* archivo, struct tm** lims) {
       lt = ltree_insertar(lt, &lugar);
       fechas_insertar(tabla, lugar, f, notifs);
 
+      free(buf);
+      buf = NULL;
       getline(&buf, &s, fp);
     }
 
-    if (orden == -1 && dias(lims[0], f) > 0) {
-      actualizar_fecha(lims[0], f);
-    } else if (orden == 1 && dias(f, lims[1]) > 0) {
-      actualizar_fecha(lims[1], f);
+    if (f) {
+      if (orden == -1 && dias(lims[0], f) > 0) {
+        actualizar_fecha(lims[0], f);
+      } else if (orden == 1 && dias(f, lims[1]) > 0) {
+        actualizar_fecha(lims[1], f);
+      }
     }
+
     free(buf);
     fclose(fp);
   } else {
@@ -125,9 +138,8 @@ void imprimir_dataset(Fechas* tabla, LTree lt, char* archivo, struct tm** lims) 
     }
     agregar_dias(f, -1);
   }
-  fprintf(fp, "\n");
-  fclose(fp);
 
+  fclose(fp);
   free(f);
 }
 
@@ -366,4 +378,4 @@ void graficar(Fechas* tabla, struct tm** fechas, char* lugar, struct tm** lims) 
 
   free(f);
 }
-//graficar 2020-07-08 2020-11-22 Rosario ROSARIO
+//graficar 2020-03-24 2020-11-22 Rosario ROSARIO
