@@ -22,8 +22,6 @@ void actualizar_fecha(struct tm* dest, struct tm* fuente);
 
 void agregar_dias(struct tm* fecha, int dias);
 
-int dias(struct tm* f1, struct tm* f2);
-
 int igual_fecha(struct tm* f1, struct tm* f2);
 
 Fechas* fechas_crear(int capacidad);

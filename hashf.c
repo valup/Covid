@@ -46,10 +46,6 @@ int igual_fecha(struct tm* f1, struct tm* f2) {
     && f1->tm_mday == f2->tm_mday);
 }
 
-int dias(struct tm* f1, struct tm* f2) {
-  return difftime(mktime(f1), mktime(f2))/(24.0*60*60);
-}
-
 /* Recibe una capacidad y funcion para calcular distancia en dias
 y crea una tabla de fechas con esa informacion */
 Fechas* fechas_crear(int capacidad) {

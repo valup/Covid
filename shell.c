@@ -10,7 +10,6 @@
 #include "straux.h"
 
 //cargar_dataset d.csv
-//valgrind --tool=memcheck --leak-check=full -v ./shell
 
 void help() {
   printf("TO DO\n");
@@ -52,7 +51,6 @@ LTree procesar(Fechas* tabla, LTree lt, char* buf, struct tm** lims) {
       printf("Ingrese help para mas informacion.\n\n");
       return lt;
     }
-    //printf("%s\n", arg);
 
     char* args[3];
     args[0] = strtok(arg, "|");
@@ -174,6 +172,7 @@ LTree procesar(Fechas* tabla, LTree lt, char* buf, struct tm** lims) {
       printf("Ingrese help para mas informacion.\n\n");
       return lt;
     }
+    resto = marcar_fecha(arg);
     if (!resto) {
       printf("\nERROR: Faltan argumentos.\n");
       printf("Ingrese help para mas informacion.\n\n");
@@ -188,9 +187,9 @@ LTree procesar(Fechas* tabla, LTree lt, char* buf, struct tm** lims) {
     char* args[3];
     struct tm* tm[2];
     for (int i = 0; i < 2; i++) {
-      if (i == 0)
+      if (i == 0) {
         args[i] = strtok(arg, "|");
-      else
+      } else
         args[i] = strtok(NULL, "|");
       tm[i] = string_fecha(args[i]);
       if (!tm[i]) {
@@ -202,7 +201,7 @@ LTree procesar(Fechas* tabla, LTree lt, char* buf, struct tm** lims) {
       }
     }
 
-    args[2] = strtok(NULL, "|");
+    args[2] = strtok(NULL, "\n");
 
     graficar(tabla, tm, args[2], lims);
     free(tm[0]);

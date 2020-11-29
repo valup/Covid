@@ -39,12 +39,20 @@ char* strim(char* str) {
   return strim_der(strim_izq(str));
 }
 
+int dias(struct tm* f1, struct tm* f2) {
+  return difftime(mktime(f1), mktime(f2))/(24.0*60*60);
+}
+
 struct tm* string_fecha(char* fecha) {
   int partes[3];
   int n = sscanf(fecha, "%d-%d-%d", partes, &partes[1], &partes[2]);
 
   if (n != 3)
     return NULL;
+  if (partes[0] < 2020) {
+    printf("\nERROR: Fechas deben ser a partir de 2020.\n\n");
+    return NULL;
+  }
 
   partes[0] -= 1900;
   partes[1] -= 1;
@@ -56,10 +64,17 @@ struct tm* string_fecha(char* fecha) {
   tm->tm_mon = partes[1];
   tm->tm_mday = partes[2];
 
-  int valid = mktime(tm);
-
-  if (!valid || tm->tm_year != partes[0] || tm->tm_mon != partes[1] || tm->tm_mday != partes[2]) {
+  if (!mktime(tm) || tm->tm_year != partes[0] || tm->tm_mon != partes[1] || tm->tm_mday != partes[2]) {
     free(tm);
+    return NULL;
+  }
+
+  time_t ahora;
+  time(&ahora);
+  struct tm *hoy = localtime(&ahora);
+
+  if (dias(tm, hoy) > 0) {
+    printf("\nERROR: Fecha futura.\n\n");
     return NULL;
   }
 

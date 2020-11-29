@@ -9,6 +9,9 @@
 LTree cargar_dataset(Fechas* tabla, LTree lt, char* archivo, struct tm** lims) {
   FILE* fp;
   struct tm* f;
+  fp = fopen(archivo, "a");
+  fprintf(fp, "\n");
+  fclose(fp);
 
   if ((fp = fopen(archivo, "r"))) {
     char* buf = NULL;
@@ -22,9 +25,7 @@ LTree cargar_dataset(Fechas* tabla, LTree lt, char* archivo, struct tm** lims) {
 
     getline(&buf, &s, fp);
     while (buf[0] != '\n') {
-      //printf("%s\n", buf);
       char* fecha = strtok(buf, "T");
-      //printf("fecha = %s\n", fecha);
       f = string_fecha(strim(fecha));
       if (!f) {
         printf("\nERROR: Error de datos. No se pudo cargar toda la tabla.\n\n");
@@ -34,14 +35,12 @@ LTree cargar_dataset(Fechas* tabla, LTree lt, char* archivo, struct tm** lims) {
 
       char* depto = strtok(NULL, ",");
       depto = strtok(NULL, ",");
-      //printf("depto = %s\n", depto);
       if (strim(depto)[0] == '\0') {
         printf("\nERROR: Error de datos. No se pudo cargar toda la tabla.\n\n");
         free(buf);
         return lt;
       }
       char* local = strtok(NULL, ",");
-      //printf("local = %s\n", local);
       if (strim(local)[0] == '\0') {
         printf("\nERROR: Error de datos. No se pudo cargar toda la tabla.\n\n");
         free(buf);
@@ -50,7 +49,6 @@ LTree cargar_dataset(Fechas* tabla, LTree lt, char* archivo, struct tm** lims) {
       char* cuenta = strtok(NULL, "\n");
       int* notifs = malloc(sizeof(int) * 3);
       int read = sscanf(cuenta, "%d,%d,%d", notifs, &notifs[1], &notifs[2]);
-      //printf("%d-%d-%d\n", notifs[0], notifs[1], notifs[2]);
 
       if (read < 3) {
         printf("\nERROR: Error de datos. No se pudo cargar toda la tabla.\n\n");
@@ -75,7 +73,6 @@ LTree cargar_dataset(Fechas* tabla, LTree lt, char* archivo, struct tm** lims) {
 
       lt = ltree_insertar(lt, &lugar);
       fechas_insertar(tabla, lugar, f, notifs);
-      //printf("insertado\n");
 
       getline(&buf, &s, fp);
     }
@@ -128,6 +125,7 @@ void imprimir_dataset(Fechas* tabla, LTree lt, char* archivo, struct tm** lims) 
     }
     agregar_dias(f, -1);
   }
+  fprintf(fp, "\n");
   fclose(fp);
 
   free(f);
@@ -140,15 +138,10 @@ LTree agregar_registro(Fechas* tabla, LTree lt, char** args, int* notifs, struct
     return lt;
   }
 
-  // printf("1 %d-%d-%d\n", lims[1]->tm_year+1900, lims[1]->tm_mon+1, lims[1]->tm_mday);
-  // printf("0 %d-%d-%d\n", lims[0]->tm_year+1900, lims[0]->tm_mon+1, lims[0]->tm_mday);
-  // printf("%d %d\n", dias(lims[1], f), dias(lims[0], f));
   if (dias(lims[1], f) < 0) {
     actualizar_fecha(lims[1], f);
-    //printf("1 %d-%d-%d\n", lims[1]->tm_year+1900, lims[1]->tm_mon+1, lims[1]->tm_mday);
   } else if (dias(lims[0], f) > 0) {
     actualizar_fecha(lims[0], f);
-    //printf("0 %d-%d-%d\n", lims[0]->tm_year+1900, lims[0]->tm_mon+1, lims[0]->tm_mday);
   }
 
   char* lugar = malloc(sizeof(char) * (strlen(args[1]) + 1));
@@ -156,7 +149,6 @@ LTree agregar_registro(Fechas* tabla, LTree lt, char** args, int* notifs, struct
 
   lt = ltree_insertar(lt, &lugar);
   fechas_insertar(tabla, lugar, f, notifs);
-  //printf("insertado\n");
 
   return lt;
 }
@@ -304,13 +296,32 @@ void tiempo_duplicacion(Fechas* tabla, struct tm* fecha, char* lugar, struct tm*
   free(f);
 }
 
-void graficar_aux(Lugares* t, FILE* fp, char* lugar, struct tm* f, int* acum) {
+void graficar_aux(Lugares* t, FILE** fp, char* lugar, struct tm* f, int* acum) {
   int* not = lugares_buscar(t, lugar);
   if (not && *not - *acum > 0) {
-    fprintf(fp, "%d-%d-%d ", f->tm_year+1900, f->tm_mon+1, f->tm_mday);
-    fprintf(fp, "%d %d\n", not[0], *not - *acum);
+    fprintf(fp[0], "%d-%d-%d ", f->tm_year+1900, f->tm_mon+1, f->tm_mday);
+    fprintf(fp[0], "%d\n", *not - *acum);
+
+    fprintf(fp[1], "%d-%d-%d ", f->tm_year+1900, f->tm_mon+1, f->tm_mday);
+    fprintf(fp[1], "%d\n", not[0]);
     *acum = *not;
   }
+}
+
+void comandos_gnuplot(FILE* gnuplotPipe, struct tm** fechas) {
+  fprintf(gnuplotPipe, "%s\n", "set xdata time");
+  fprintf(gnuplotPipe, "%s\n", "set timefmt \"%Y-%m-%d\"");
+  fprintf(gnuplotPipe, "%s\n", "set format x \"%d\\n%m\\n%Y\"");
+  fprintf(gnuplotPipe, "%s", "set xrange [\"");
+  fprintf(gnuplotPipe, "%d-%d", fechas[0]->tm_year+1900, fechas[0]->tm_mon+1);
+  fprintf(gnuplotPipe, "-%d\":\"%d", fechas[0]->tm_mday, fechas[1]->tm_year+1900);
+  fprintf(gnuplotPipe, "-%d-%d\"]\n", fechas[1]->tm_mon+1, fechas[1]->tm_mday);
+  fprintf(gnuplotPipe, "%s\n", "set multiplot layout 2,1");
+  fprintf(gnuplotPipe, "%s\n", "set title \"Diarios\"");
+  fprintf(gnuplotPipe, "%s\n", "plot \"diarios.temp\" u 1:2 w lines notitle");
+  fprintf(gnuplotPipe, "%s\n", "set title \"Acumulados\"");
+  fprintf(gnuplotPipe, "%s\n", "plot \"acum.temp\" u 1:2 w lines notitle");
+  fflush(gnuplotPipe);
 }
 
 void graficar(Fechas* tabla, struct tm** fechas, char* lugar, struct tm** lims) {
@@ -323,7 +334,9 @@ void graficar(Fechas* tabla, struct tm** fechas, char* lugar, struct tm** lims) 
   if (dias(lims[0], fechas[0]) > 0)
     actualizar_fecha(fechas[0], lims[0]);
 
-  FILE* fp = fopen("data.temp", "w");
+  FILE* fp[2];
+  fp[0] = fopen("diarios.temp", "w");
+  fp[1] = fopen("acum.temp", "w");
 
   struct tm* f = malloc(sizeof(struct tm));
   memset(f, 0, sizeof(struct tm));
@@ -344,11 +357,13 @@ void graficar(Fechas* tabla, struct tm** fechas, char* lugar, struct tm** lims) 
     }
     agregar_dias(f, 1);
   }
+  fclose(fp[0]);
+  fclose(fp[1]);
 
   FILE* gnuplotPipe = popen("gnuplot -persistent", "w");
-  fprintf(gnuplotPipe, "%s \n", "set title \"TITLEEEEE\""); //Send commands to gnuplot one by one.
-  fprintf(gnuplotPipe, "%s \n", "plot 'data.temp'");
+  comandos_gnuplot(gnuplotPipe, fechas);
+  fclose(gnuplotPipe);
 
   free(f);
-  fclose(fp);
 }
+//graficar 2020-07-08 2020-11-22 Rosario ROSARIO
