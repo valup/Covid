@@ -25,7 +25,7 @@ Lugares* lugares_crear(unsigned capacidad, FuncionHash hash, FuncionPaso paso) {
 
 /* Recibe una tabla de lugares, un lugar y un puntero a notificaciones
 e inserta el puntero en la tabla, asociado al lugar dado */
-void lugares_insertar(Lugares* tabla, char* lugar, int* notifs) {
+void lugares_insertar(Lugares* tabla, wchar_t* lugar, int* notifs) {
   /* si el factor de carga supera el limite establecido
   se redimensiona la tabla para duplicar la capacidad,
   esto significa que la tabla nunca se llena */
@@ -39,7 +39,7 @@ void lugares_insertar(Lugares* tabla, char* lugar, int* notifs) {
   /* se recorre la tabla hasta hallar una casilla vacia
   y gracias a la redimension siempre habra lugar */
   while (tabla->lugares[idx].notifs) {
-    if (!strcmp(tabla->lugares[idx].lugar, lugar)) {
+    if (!wcscoll(tabla->lugares[idx].lugar, lugar)) {
       //free(lugar);
       free(tabla->lugares[idx].notifs);
       /* No se libera el lugar porque primero se lo busca en el arbol
@@ -63,7 +63,7 @@ void lugares_insertar(Lugares* tabla, char* lugar, int* notifs) {
 /* Recibe una tabla de lugares y un lugar
 busca las notificaciones asociadas en la tabla y retorna un puntero a ellas
 o en caso de no hallarlas retorna un puntero nulo */
-int* lugares_buscar(Lugares* tabla, char* lugar) {
+int* lugares_buscar(Lugares* tabla, wchar_t* lugar) {
   /* se calcula la posición del lugar dada de acuerdo a la función hash */
   unsigned idx = tabla->hash(lugar) % tabla->capacidad;
   /* se recorren las posiciones posibles en la tabla
@@ -73,7 +73,7 @@ int* lugares_buscar(Lugares* tabla, char* lugar) {
   while (tabla->lugares[idx].lugar) {
     /* Se compara por lugar porque las casillas eliminadas
     tienen puntero nulo a notificaciones pero mantienen el lugar */
-    if (!strcmp(tabla->lugares[idx].lugar, lugar))
+    if (!wcscoll(tabla->lugares[idx].lugar, lugar))
       return tabla->lugares[idx].notifs;
     idx = (idx + tabla->paso(lugar)) % tabla->capacidad;
   }
@@ -82,7 +82,7 @@ int* lugares_buscar(Lugares* tabla, char* lugar) {
 
 /* Recibe una tabla de lugares y un lugar,
 busca la entrada asociada en la tabla y si halla la elimina */
-void lugares_eliminar(Lugares* tabla, char* lugar) {
+void lugares_eliminar(Lugares* tabla, wchar_t* lugar) {
   /* se calcula la posición del lugar dado de acuerdo a la función hash */
   unsigned idx = tabla->hash(lugar) % tabla->capacidad;
   /* se recorren las posiciones posibles en la tabla
@@ -92,8 +92,10 @@ void lugares_eliminar(Lugares* tabla, char* lugar) {
   while (tabla->lugares[idx].lugar) {
     /* Se compara por lugar porque las casillas eliminadas
     tienen puntero nulo a notificaciones pero mantienen el lugar */
-    if (!strcmp(tabla->lugares[idx].lugar, lugar) && tabla->lugares[idx].notifs)
+    if (!wcscoll(tabla->lugares[idx].lugar, lugar) && tabla->lugares[idx].notifs) {
       free(tabla->lugares[idx].notifs);
+      tabla->lugares[idx].notifs = NULL;
+    }
     /* Se mantiene el string de lugar como marca de casilla eliminada
     para no detener la busqueda futura de otros lugares */
     idx = (idx + tabla->paso(lugar)) % tabla->capacidad;

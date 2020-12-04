@@ -1,18 +1,20 @@
 #ifndef __HASHL_H__
 #define __HASHL_H__
 
+#include <wchar.h>
+
 #define LIM 0.7
 #define LUGARES_INI 997
 
-typedef unsigned (*FuncionHash)(char* clave);
+typedef unsigned (*FuncionHash)(wchar_t* clave);
 
-typedef unsigned (*FuncionPaso)(char* clave);
+typedef unsigned (*FuncionPaso)(wchar_t* clave);
 
 /* CasillaLugar es una casilla de hash
 con string (lugar) como clave y notificaciones de casos
 (puntero a int para guardar 3 int) como dato */
 typedef struct _CasillaLugar {
-  char* lugar;
+  wchar_t* lugar;
   int* notifs;
 } CasillaLugar;
 
@@ -31,11 +33,11 @@ typedef struct {
 
 Lugares* lugares_crear(unsigned capacidad, FuncionHash hash, FuncionPaso paso);
 
-void lugares_insertar(Lugares* tabla, char* lugar, int* notifs);
+void lugares_insertar(Lugares* tabla, wchar_t* lugar, int* notifs);
 
-int* lugares_buscar(Lugares* tabla, char* lugar);
+int* lugares_buscar(Lugares* tabla, wchar_t* lugar);
 
-void lugares_eliminar(Lugares* tabla, char* lugar);
+void lugares_eliminar(Lugares* tabla, wchar_t* lugar);
 
 void lugares_redimensionar(Lugares* tabla);
 

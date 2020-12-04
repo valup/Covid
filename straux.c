@@ -6,42 +6,64 @@
 #include <time.h>
 #include "straux.h"
 
+wchar_t* wgetline(wchar_t* buf, FILE* stream) {
+  buf = malloc(sizeof(wchar_t) * 100);
+  memset(buf, 0, sizeof(wchar_t) * 100);
+  if (!fgetws(buf, 100, stream)) {
+    printf("done\n");
+    free(buf);
+    return NULL;
+  }
+  wchar_t* aux;
+  while(wcslen(buf) > 0 && buf[wcslen(buf) - 1] != L'\n') {
+    aux = malloc(sizeof(wchar_t) * 50);
+    memset(aux, 0, sizeof(wchar_t) * 50);
+    fgetws(aux, 50, stream);
+    buf = realloc(buf, sizeof(wchar_t) * (wcslen(buf) + wcslen(aux) + 1));
+    wcscat(buf, aux);
+    //printf("%ls\n", aux);
+    free(aux);
+  }
+  return buf;
+}
+
 /* Recibe tres strings y devuelve uno nuevo con los dos primeros
 separados por el tercero */
-char* unir(char* str1, char* str2, char* sep) {
+wchar_t* unir(wchar_t* str1, wchar_t* str2, wchar_t* sep) {
   /* Guarda espacio para el nuevo string */
-  char* str = malloc(sizeof(char)
-              * (strlen(str1) + strlen(str2) + strlen(sep) + 1));
+  wchar_t* str = malloc(sizeof(wchar_t)
+              * (wcslen(str1) + wcslen(str2) + wcslen(sep) + 1));
   /* Copia el primer string */
-  strcpy(str, str1);
+  wcscpy(str, str1);
   /* Concatena el separador */
-  strcat(str, sep);
+  wcscat(str, sep);
   /* Concatena el segundo string */
-  strcat(str, str2);
+  wcscat(str, str2);
   return str;
 }
 
+
 /* Recibe un string y devuelve un puntero al primer caracter no espacio */
-char* strim_izq(char* str) {
+wchar_t* strim_izq(wchar_t* str) {
   if (!str)
     return NULL;
-  for (;str[0] == ' '; str++);
+  for (;str[0] == L' '; str++);
   return str;
 }
 
 /* Recibe un string y elimina los espacios luego del ultimo
 caracter no espacio */
-char* strim_der(char* str) {
+wchar_t* strim_der(wchar_t* str) {
   if (!str)
     return NULL;
-  size_t i = strlen(str);
-  for (;i > 0 && str[i-1] == ' '; i--);
-  str[i] = '\0';
+  size_t i = wcslen(str);
+  for (;i > 0 && str[i-1] == L' '; i--);
+  str[i] = L'\0';
   return str;
 }
 
 /* Recibe un string y remueve los espacios de ambos extremos */
-char* strim(char* str) {
+wchar_t* strim(wchar_t* str) {
   return strim_der(strim_izq(str));
 }
 
@@ -57,9 +79,9 @@ int dias(struct tm* f1, struct tm* f2) {
 
 /* Toma un string que asume como fecha en formato YYYY-MM-DD
 e intenta crear una estructura de tiempo struct tm* con esa informacion */
-struct tm* string_fecha(char* fecha) {
+struct tm* string_fecha(wchar_t* fecha) {
   int partes[3];
-  int n = sscanf(fecha, "%d-%d-%d", partes, &partes[1], &partes[2]);
+  int n = swscanf(fecha, L"%d-%d-%d", partes, &partes[1], &partes[2]);
   /* Si no pudo escanear tres enteros entonces hay un error en el string
   y no se puede convertir */
   if (n != 3)
@@ -111,13 +133,13 @@ struct tm* string_fecha(char* fecha) {
 pone una separador | en el primer espacio luego de la fecha
 (asumiendo que esta al principio) y retorna un puntero
 al primer caracter del comando luego de ese separador */
-char* marcar_fecha(char* buf) {
-  char* p = strchr(buf, ' ');
+wchar_t* marcar_fecha(wchar_t* buf) {
+  wchar_t* p = wcschr(buf, L' ');
   /* Si no hay espacios o es el final del comando se retorna NULL sin marcar */
-  if (!p || *(p + 1) == '\n' || *(p + 1) == '\0')
+  if (!p || *(p + 1) == L'\n' || *(p + 1) == L'\0')
     return NULL;
 
-  *p = '|';
+  *p = L'|';
 
   return p + 1;
 }
@@ -126,18 +148,18 @@ char* marcar_fecha(char* buf) {
 (excepto la fecha que se separa primero con |),
 e intenta poner un separador | en el espacio antes de cada notificacion
 (asumiendo que son tres al final), retorna 1 si pudo o 0 sino */
-int marcar_notifs(char* buf) {
-  char* p;
+int marcar_notifs(wchar_t* buf) {
+  wchar_t* p;
   /* Repite por cada notificacion que deberia haber */
   for (int i = 0; i < 3; i++) {
-    /* strrchr busca la ultima ocurrencia del caracter */
-    p = strrchr(buf, ' ');
+    /* wcsrchr busca la ultima ocurrencia del caracter */
+    p = wcsrchr(buf, L' ');
     /* Si no halla o es el primer caracter hay un error
     y no se puede separar */
     if (!p || p == buf)
       return 0;
 
-    *p = '|';
+    *p = L'|';
   }
   return 1;
 }
@@ -147,24 +169,24 @@ y un caracter con el cual detener la lectura,
 e intenta separar las partes por coma (asumiendo que estan al principio, que
 ambas pueden tener espacios adentro y que se diferencian porque el departamento
 tiene minusculas y la localidad no), retorna 1 si pudo o 0 sino */
-int marcar_lugar(char* buf, char hasta) {
+int marcar_lugar(wchar_t* buf, wchar_t hasta) {
   int i = 0; /* Indice para recorrer el buffer */
   /* Se recorre la primera palabra a menos que empiece con numero
   o caracter menor (para casos como 9 de Julio)*/
-  if (buf[i] > '9') {
+  if (buf[i] > L'9') {
     /* Se busca si la primera palabra es parte del departamento
     (tiene minusculas) */
-    for (; buf[i] != ' ' && buf[i] != hasta; i++) {
-      if (buf[i] >= 'a' && buf[i] <= 'z')
+    for (; buf[i] != L' ' && buf[i] != hasta; i++) {
+      if (buf[i] >= L'a' && buf[i] <= L'z')
         break;
     }
   }
   /* Si ya se llego hasta el caracter limite o se leyeron varios caracteres
   sin hallar minusculas, faltan partes y no se puede separar */
-  if (buf[i] == hasta || (buf[i] == ' ' && i > 1))
+  if (buf[i] == hasta || (buf[i] == L' ' && i > 1))
     return 0;
   /* Sino se recorre el string hasta espacio o limite */
-  for (; buf[i] != ' ' && buf[i] != hasta; i++);
+  for (; buf[i] != L' ' && buf[i] != hasta; i++);
   /* Se vuelve a chequear si llego al limite */
   if (buf[i] == hasta)
     return 0;
@@ -173,17 +195,17 @@ int marcar_lugar(char* buf, char hasta) {
   for (int j = i + 1; buf[j] != hasta; j++) {
     int min = 0; /* Flag para indicar que se hallo minuscula */
     /* Se recorre la palabra a ver si tiene minusculas */
-    for (; buf[j] != ' ' && buf[j] != hasta; j++) {
-      if (buf[j] >= 'a' && buf[j] <= 'z') {
+    for (; buf[j] != L' ' && buf[j] != hasta; j++) {
+      if (buf[j] >= L'a' && buf[j] <= L'z') {
         min = 1;
-        for (; buf[j] != ' ' && buf[j] != hasta; j++);
+        for (; buf[j] != L' ' && buf[j] != hasta; j++);
         break;
       }
     }
     /* Si no tiene minusculas es localidad
     asi que se pone coma en el espacio que marca i */
     if (!min) {
-      buf[i] = ',';
+      buf[i] = L',';
       break;
     /* Si tenia minusculas y se llego al limite falta localidad
     y no se puede separar */
@@ -202,16 +224,16 @@ int marcar_lugar(char* buf, char hasta) {
 inicialmente convirtiendolo en long y chequeando que el resultado sea valido
 en cuyo caso se guarda en un puntero y se retorna
 sino se retorna NULL */
-int* string_to_int(char* str) {
+int* string_to_int(wchar_t* str) {
   /* El puntero endp indica hasta donde se pudo convertir str */
-  char* endp = NULL;
+  wchar_t* endp = NULL;
   /* Se convierte en base 10 */
-  long n = strtol(str, &endp, 10);
+  long n = wcstol(str, &endp, 10);
   /* Si el puntero sigue al principio o no llego a /0
   (es decir que no se pudo convertir todo el string)
   o si el resultado esta fuera del rango representable por enteros
   no es valido y se retorna NULL */
-  if (endp == str || *endp != '\0' || n < INT_MIN || n > INT_MAX)
+  if (endp == str || *endp != L'\0' || n < INT_MIN || n > INT_MAX)
     return NULL;
   int* m = malloc(sizeof(int));
   *m = (int) n;

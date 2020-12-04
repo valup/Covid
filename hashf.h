@@ -34,7 +34,7 @@ int igual_fecha(struct tm* f1, struct tm* f2);
 
 Fechas* fechas_crear(int capacidad);
 
-void fechas_insertar(Fechas* tabla, char* lugar, struct tm* fecha, int* notifs);
+void fechas_insertar(Fechas* tabla, wchar_t* lugar, struct tm* fecha, int* notifs);
 
 Lugares* fechas_buscar(Fechas* tabla, struct tm* fecha);
 

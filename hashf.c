@@ -9,8 +9,8 @@
 /* Funcion de hasheo de forma rolling hash polinomial
 explicada en el informe
 usada para la creacion de tablas de lugar */
-unsigned hash(char* str) {
-  unsigned p = 53, pow = 1, len = strlen(str), total = 0;
+unsigned hash(wchar_t* str) {
+  unsigned p = 53, pow = 1, len = wcslen(str), total = 0;
   for (long i = 0; i < len; i++) {
     //printf("%ud ^ %ud = %f\n", p, i, pow(p, i));
     //printf("%f + %f = %f\n", total, (float) str[i] * pow(p, i), total + str[i] * pow(p, i));
@@ -25,7 +25,7 @@ unsigned hash(char* str) {
 /* Funcion de paso para hashing doble
 que retorna el valor ASCII de la primera letra de la clave
 usada para la creacion de tablas de lugar */
-unsigned paso(char* str) {
+unsigned paso(wchar_t* str) {
   return (unsigned) str[0];
 }
 
@@ -72,7 +72,7 @@ Fechas* fechas_crear(int capacidad) {
 
 /* Recibe una tabla de fechas, una fecha, un lugar y notificaciones de la fecha
 e inserta las ultimas dos en una tabla asociada a la fecha dada */
-void fechas_insertar(Fechas* tabla, char* lugar, struct tm* fecha, int* notifs) {
+void fechas_insertar(Fechas* tabla, wchar_t* lugar, struct tm* fecha, int* notifs) {
   /* Si es la primera fecha que se ingresa se ubica al principio
   para luego usarla de referencia para el hasheo */
   if (!tabla->numElems) {

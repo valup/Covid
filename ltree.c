@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <locale.h>
 #include "ltree.h"
 
 #define CONT 10
@@ -24,7 +25,7 @@ int ltree_altura(LTree lt) {
 
 /* Devuelve el minimo string en el arbol
 (el mas a la izquierda) */
-char* ltree_minimo(LTree lt) {
+wchar_t* ltree_minimo(LTree lt) {
   /* Si es arbol vacio no hay minimo */
   if (!lt)
     return NULL;
@@ -60,7 +61,7 @@ LTree ltree_rotar_izq(LTree lt) {
 /* Recibe un arbol y un puntero a string,
 si no halla el string en el arbol lo inserta,
 sino libera el string y lo reemplaza por el preexistente en el puntero */
-LTree ltree_insertar(LTree lt, char** lugar) {
+LTree ltree_insertar(LTree lt, wchar_t** lugar) {
   /* Si el arbol es vacio inserta el string en el primer nodo */
   if (!lt) {
     LTree nodo = malloc(sizeof(LTNodo));
@@ -72,10 +73,10 @@ LTree ltree_insertar(LTree lt, char** lugar) {
 
   /* Si el string es alfabeticamente menor al del nodo,
   sigue buscando a la izquierda */
-  if (strcmp(*lugar, lt->lugar) < 0)
+  if (wcscoll(*lugar, lt->lugar) < 0)
     lt->left = ltree_insertar(lt->left, lugar);
   /* Si es mayor, a la derecha */
-  else if (strcmp(*lugar, lt->lugar) > 0)
+  else if (wcscoll(*lugar, lt->lugar) > 0)
     lt->right = ltree_insertar(lt->right, lugar);
   /* Sino es el mismo, asi que se lo reemplaza */
   else {
@@ -88,12 +89,12 @@ LTree ltree_insertar(LTree lt, char** lugar) {
   int dif = ltree_altura(lt->left) - ltree_altura(lt->right);
   /* Si es necesario se balancea */
   if (dif > 1) {
-    if (strcmp(*lugar, lt->left->lugar) > 0)
+    if (wcscoll(*lugar, lt->left->lugar) > 0)
       lt->left = ltree_rotar_izq(lt->left);
     return ltree_rotar_der(lt);
 
   } else if (dif < -1) {
-    if (strcmp(*lugar, lt->right->lugar) < 0)
+    if (wcscoll(*lugar, lt->right->lugar) < 0)
       lt->right = ltree_rotar_der(lt->right);
     return ltree_rotar_izq(lt);
   }

@@ -13,17 +13,21 @@ otra para la ultima) e intenta cargar toda la infrmacion del archivo
 YYYY-MM-DDT00:00-03:00-Depto,LOCALIDAD,confirmados,descartados,estudio,total)
 a la tabla y el arbol, guardando la primera y ultima fecha en la estructura
 lims (asumiendo que el archivo esta ordenado por fecha) y retornando el arbol */
-LTree cargar_dataset(Fechas* tabla, LTree lt, char* archivo, struct tm** lims) {
+LTree cargar_dataset(Fechas* tabla, LTree lt, wchar_t* archivo, struct tm** lims) {
+  /* Convierte el nombre de archivo a char* para poder abrir el archivo */
+  char* file = malloc(sizeof(char) * (wcslen(archivo) + 2));
+  swscanf(archivo, L"%s", file);
   FILE* fp; /* Puntero para el archivo */
   struct tm* f = NULL; /* Puntero para crear cada estructura de fecha */
   /* Primero se asegura que se pueda abrir el archivo */
-  if ((fp = fopen(archivo, "r"))) {
-    char* buf = NULL;
-    size_t s = 1; /* size_t cualquiera para pasar a getline */
+  if ((fp = fopen(file, "r"))) {
+    free(file);
+    wchar_t* buf = NULL;
+    wchar_t* pt; /* Puntero para wcstok */
     /* Se lee la primera linea del archivo, que deberia indicar
     los nombres de las columnas */
-    getline(&buf, &s, fp);
-    /* Si se leyo solamente el end of file, el archivo es vacio */
+    buf = wgetline(buf, fp);
+    /* Si se seteo el end of file se puede considerar archivo vacio */
     if (feof(fp)) {
       printf("\nERROR: Archivo vacio.\n");
       printf("Ingrese help para mas informacion\n\n");
@@ -31,29 +35,32 @@ LTree cargar_dataset(Fechas* tabla, LTree lt, char* archivo, struct tm** lims) {
       fclose(fp);
       return lt;
     }
+    free(buf);
 
     int lim = 0; /* Flag para indicar si se guardo el primer limite */
     /* Se lee la primera linea de datos */
-    getline(&buf, &s, fp);
+    buf = wgetline(buf, fp);
     /* En cada vuelta se confirma que no haya end of file */
     while (!feof(fp)) {
+
       /* Hasta la T es fecha */
-      char* fecha = strtok(buf, "T");
+      wchar_t* fecha = wcstok(buf, L"T", &pt);
       /* Se intenta convertir a struct tm* */
       f = string_fecha(strim(fecha));
       /* Si no se pudo hay un error en los datos y se detiene todo */
       if (!f) {
         printf("\nERROR: Error de datos. No se pudo cargar toda la tabla.\n\n");
         free(buf);
+        //free(wbuf);
         fclose(fp);
         return lt;
       }
       /* Se lee hasta la proxima coma */
-      char* depto = strtok(NULL, ",");
+      wchar_t* depto = wcstok(NULL, L",", &pt);
       /* Se repite para descartar la parte de 00:00:00-03:00 */
-      depto = strtok(NULL, ",");
+      depto = wcstok(NULL, L",", &pt);
       /* Si no hay departamento antes de la coma es error y se detiene */
-      if (strim(depto)[0] == '\0') {
+      if (!depto) {
         printf("\nERROR: Error de datos. No se pudo cargar toda la tabla.\n\n");
         free(buf);
         free(f);
@@ -61,21 +68,22 @@ LTree cargar_dataset(Fechas* tabla, LTree lt, char* archivo, struct tm** lims) {
         return lt;
       }
       /* Se lee hasta la proxima coma para la localidad */
-      char* local = strtok(NULL, ",");
+      wchar_t* local = wcstok(NULL, L",", &pt);
       /* Si no hay localidad antes de la coma es error y se detiene */
-      if (strim(local)[0] == '\0') {
+      if (!local) {
         printf("\nERROR: Error de datos. No se pudo cargar toda la tabla.\n\n");
         free(buf);
+        //free(wbuf);
         free(f);
         fclose(fp);
         return lt;
       }
       /* Se lee el resto para las notificaciones */
-      char* cuenta = strtok(NULL, "\n");
+      wchar_t* cuenta = wcstok(NULL, L"\n", &pt);
       /* Se guarda espacio para ellas */
       int* notifs = malloc(sizeof(int) * 3);
       /* Se escanea para extraer los valores */
-      int read = sscanf(cuenta, "%d,%d,%d", notifs, &notifs[1], &notifs[2]);
+      int read = swscanf(cuenta, L"%d,%d,%d", notifs, &notifs[1], &notifs[2]);
       /* Si no se escanearon los 3 es error y se detiene todo */
       if (read < 3) {
         printf("\nERROR: Error de datos. No se pudo cargar toda la tabla.\n\n");
@@ -91,7 +99,7 @@ LTree cargar_dataset(Fechas* tabla, LTree lt, char* archivo, struct tm** lims) {
         lim = 1;
       }
       /* Se unen el departamento y localidad en un string con coma */
-      char* lugar = unir(depto, local, ",");
+      wchar_t* lugar = unir(depto, local, L",");
       /* Se intenta insertar el lugar en el arbol,
       si ya estaba se libera el string y se lo reemplaza por el que estaba */
       lt = ltree_insertar(lt, &lugar);
@@ -99,8 +107,7 @@ LTree cargar_dataset(Fechas* tabla, LTree lt, char* archivo, struct tm** lims) {
       fechas_insertar(tabla, lugar, f, notifs);
       /* Se libera el buffer y se lee la proxima linea */
       free(buf);
-      buf = NULL;
-      getline(&buf, &s, fp);
+      buf = wgetline(buf, fp);
     }
     /* Si se termino de leer el archivo y quedo fecha leida
     (no sucede si el archivo no tenia registros) se guarda el otro limite */
@@ -129,7 +136,7 @@ void imprimir_dataset_aux(LTree lt, Lugares* t, FILE* fp, struct tm* f) {
   int* not = lugares_buscar(t, lt->lugar);
   /* Si se hallan notificaciones se imprimen */
   if (not) {
-    fprintf(fp, "%d-%d-%dT00:00:00-03:00,%s,%d,%d,%d,%d\n",
+    fprintf(fp, "%d-%d-%dT00:00:00-03:00,%ls,%d,%d,%d,%d\n",
       f->tm_year+1900, f->tm_mon+1, f->tm_mday,
       lt->lugar, not[0], not[1], not[2], not[0]+not[1]+not[2]);
   }
@@ -142,8 +149,11 @@ y una estructura de fechas limite, y se imprimen todos los registros
 entre las fechas limite en el archivo, con formato
 YYYY-MM-DDT00:00:00-03:00,lugar,confirmados,descartados,estudio,total
 ordenados primero por fecha y luego por lugar */
-void imprimir_dataset(Fechas* tabla, LTree lt, char* arch, struct tm** lims) {
-  FILE* fp = fp = fopen(arch, "w");
+void imprimir_dataset(Fechas* tabla, LTree lt, wchar_t* arch, struct tm** lims) {
+  char* file = malloc(sizeof(char) * (wcslen(arch) + 2));
+  swscanf(arch, L"%s", file);
+  FILE* fp = fopen(file, "w");
+  free(file);
   fprintf(fp,
   "Fecha,Departamento,Localidad,Confirmados,Descartados,En estudio,Notificaciones\n"
   );
@@ -194,7 +204,7 @@ void imprimir_dataset(Fechas* tabla, LTree lt, char* arch, struct tm** lims) {
 de argumento (una fecha, un lugar y notificaciones) y un puntero a fechas limite
 y agrega el registro a la tabla, y de ser necesario agrega el lugar al arbol
 y actualiza los limites */
-LTree agregar_registro(Fechas* tabla, LTree lt, char** args, struct tm** lims) {
+LTree agregar_registro(Fechas* tabla, LTree lt, wchar_t** args, struct tm** lims) {
   /* Intenta convertir el primer argumento a estructura de fecha,
   si no puede retorna */
   struct tm* f = string_fecha(args[0]);
@@ -206,7 +216,7 @@ LTree agregar_registro(Fechas* tabla, LTree lt, char** args, struct tm** lims) {
   /* Intenta convertir el ultimo argumento a notificaciones,
   si no puede retorna */
   int* notifs = malloc(sizeof(int) * 3);
-  int read = sscanf(args[2], "%d|%d|%d", notifs, &notifs[1], &notifs[2]);
+  int read = swscanf(args[2], L"%d|%d|%d", notifs, &notifs[1], &notifs[2]);
   if (read < 3) {
     printf("\nERROR: Numero invalido.\n");
     printf("Ingrese help para mas informacion.\n\n");
@@ -235,8 +245,8 @@ LTree agregar_registro(Fechas* tabla, LTree lt, char** args, struct tm** lims) {
     }
   }
   /* Guarda espacio para el lugar y lo copia */
-  char* lugar = malloc(sizeof(char) * (strlen(args[1]) + 1));
-  strcpy(lugar, args[1]);
+  wchar_t* lugar = malloc(sizeof(wchar_t) * (wcslen(args[1]) + 1));
+  wcscpy(lugar, args[1]);
   /* Inserta en la tabla pero primero
   intenta insertar el lugar en el arbol, y si ya estaba
   se libera y se reemplaza por el lugar del arbol */
@@ -246,13 +256,9 @@ LTree agregar_registro(Fechas* tabla, LTree lt, char** args, struct tm** lims) {
   return lt;
 }
 
-//agregar_registro 2020-11-23 9 de Julio ANTONIO PINI 5 0 0
-//agregar_registro 2020-11-21 9 de Julio ANTONIO PINI 2 0 0
-//agregar_registro 2020-11-22 9 de Julio ANTONIO PINI 4 0 0
-
 /* Recibe una tabla de fechas una estructura de fecha y un string de lugar,
 y si hay registros de ese lugar en esa fecha los elimina */
-void eliminar_registro(Fechas* tabla, struct tm* fecha, char* lugar) {
+void eliminar_registro(Fechas* tabla, struct tm* fecha, wchar_t* lugar) {
   Lugares* lugares = fechas_buscar(tabla, fecha);
   if (lugares)
     lugares_eliminar(lugares, lugar);
@@ -261,7 +267,7 @@ void eliminar_registro(Fechas* tabla, struct tm* fecha, char* lugar) {
 /* Recibe una tabla de fechas, un string de lugar y una estructura
 de fechas limite, y busca todos los registros del lugar
 entre las fechas limite para hallar el pico */
-void buscar_pico(Fechas* tabla, char* lugar, struct tm** lims) {
+void buscar_pico(Fechas* tabla, wchar_t* lugar, struct tm** lims) {
   /* Si no hay elementos no puede buscar */
   if (!tabla->numElems) {
     printf("\nERROR: No hay registros cargados\n\n");
@@ -330,7 +336,7 @@ void buscar_pico(Fechas* tabla, char* lugar, struct tm** lims) {
   }
   /* Si se hallo un pico se imprime el valor y la fecha correspondiente */
   if (pico > -1) {
-    printf("\nPico de %s: %d en %d-%d-%d\n\n", lugar, pico,
+    printf("\nPico de %ls: %d en %d-%d-%d\n\n", lugar, pico,
       fpico->tm_year+1900, fpico->tm_mon+1, fpico->tm_mday);
   }
 
@@ -341,7 +347,7 @@ void buscar_pico(Fechas* tabla, char* lugar, struct tm** lims) {
 /* Recibe una tabla de fechas, una estructura de fecha y un string de lugar,
 busca registro del lugar en la fecha y si lo halla imprime los casos
 confirmados acumulados */
-void casos_acumulados(Fechas* tabla, struct tm* fecha, char* lugar) {
+void casos_acumulados(Fechas* tabla, struct tm* fecha, wchar_t* lugar) {
   /* Busca la fecha en la tabla */
   Lugares* l = fechas_buscar(tabla, fecha);
   /* Si hay registros para la fecha busca el lugar */
@@ -349,7 +355,7 @@ void casos_acumulados(Fechas* tabla, struct tm* fecha, char* lugar) {
     int* notifs = lugares_buscar(l, lugar);
     /* Si halla registro imprime los casos confirmados acumulados */
     if (notifs) {
-      printf("\n%d casos acumulados en %s hasta %d-%d-%d\n\n",
+      printf("\n%d casos acumulados en %ls hasta %d-%d-%d\n\n",
       notifs[0], lugar, fecha->tm_year+1900, fecha->tm_mon+1, fecha->tm_mday);
     } else {
       printf("\nERROR: No hay registro del lugar en la fecha\n\n");
@@ -359,14 +365,20 @@ void casos_acumulados(Fechas* tabla, struct tm* fecha, char* lugar) {
   }
 }
 
-void tiempo_duplicacion(Fechas* tabla, struct tm* fecha, char* lugar, struct tm* prim) {
+/* Recibe una tabla de fechas, una estructura de fecha, un string de lugar
+y una estructura de fecha con el limite inferior de fechas, e intenta
+buscar la cantidad de dias que tardaron en duplicarse los casos confirmados
+acumulados hasta llegar a la fecha ingresada */
+void tiempo_duplicacion(Fechas* tabla, struct tm* fecha, wchar_t* lugar, struct tm* prim) {
+  /* Si no hay elementos en la tabla no se puede buscar */
   if (!tabla->numElems) {
     printf("\nERROR: no hay dataset cargado\n\n");
     return;
   }
-
+  /* Inicializa una estructura de fecha para recorrer la tabla */
   struct tm* f = malloc(sizeof(struct tm));
   memset(f, 0, sizeof(struct tm));
+  /* Guarda la fecha buscada en la estructura */
   actualizar_fecha(f, fecha);
 
   int* og; /* Variable para guardar el valor original de casos acumulados */
@@ -383,21 +395,28 @@ void tiempo_duplicacion(Fechas* tabla, struct tm* fecha, char* lugar, struct tm*
   } else {
     printf("\nERROR: No hay registros para la fecha\n\n");
   }
-  int obj = *og/2;
+  int obj = *og/2; /* Maximo de casos acumulados que quiere hallar */
 
-  int fin = 0;
-  CasillaFecha* casilla;
-
+  int fin = 0; /* Flag que indica si se llego a la primera fecha */
+  CasillaFecha* casilla; /* Puntero para simplificar luego el codigo */
+  /* Calcula la posicion de comienzo y se empieza a buscar */
   int idx = abs(dias(fecha, tabla->fechas[0].fecha));
   for(; !fin; idx = abs(dias(f, tabla->fechas[0].fecha))) {
+    /* Si llega a la primera fecha setea el fin */
     if (igual_fecha(f, prim))
       fin = 1;
     /* Guarda un puntero a la casilla por simplicidad */
     casilla = &tabla->fechas[idx];
+    /* Si hay tabla en la casilla compara las fechas */
     if (casilla->tabla) {
+      /* Si no es la misma fecha pero hay otra casilla en la lista,
+      debe ser la de la fecha */
       if (!igual_fecha(f, casilla->fecha) && casilla->sig)
         casilla = casilla->sig;
+      /* Busca si hay registro del lugar */
       int* notifs = lugares_buscar(casilla->tabla, lugar);
+      /* Si hay y la cantidad acumulada de confirmados es menor o igual
+      al valor buscado, imprime la diferencia en dias */
       if (notifs && *notifs <= obj) {
         obj = dias(fecha, casilla->fecha);
         printf("\nTiempo de duplicacion: %d dias\n\n", obj);
@@ -405,79 +424,114 @@ void tiempo_duplicacion(Fechas* tabla, struct tm* fecha, char* lugar, struct tm*
         return;
       }
     }
+    /* Actualiza la fecha al dia anterior */
     agregar_dias(f, -1);
   }
-  printf("\nERROR: No hay registros de dias con la mitad o menos de casos acumulados\n\n");
+  printf(
+  "\nERROR: No hay registros de dias con la mitad o menos de casos acumulados\n\n"
+  );
 
   free(f);
 }
 
+/* Funcion auxiliar que recibe un puntero a gnuplot y un puntero a
+estructuras de fecha e imprime comandos a gnuplot para crear dos graficos
+de datos entre las fechas */
 void comandos_gnuplot(FILE* gnuplotPipe, struct tm** fechas) {
+  /* Tipo de datos en eje x */
   fprintf(gnuplotPipe, "set xdata time\n");
+  /* Formato de tiempo a leer */
   fprintf(gnuplotPipe, "%s\n", "set timefmt \"%Y-%m-%d\"");
+  /* Formato de tiempo a escribir en x */
   fprintf(gnuplotPipe, "%s\n", "set format x \"%d\\n%m\\n%Y\"");
+  /* Rango de fechas para el eje */
   fprintf(gnuplotPipe, "set xrange [\"%d-%d-%d\":\"%d-%d-%d\"]\n",
     fechas[0]->tm_year+1900, fechas[0]->tm_mon+1, fechas[0]->tm_mday,
     fechas[1]->tm_year+1900, fechas[1]->tm_mon+1, fechas[1]->tm_mday);
+  /* Presentacion de dos graficos uno sobre el otro */
   fprintf(gnuplotPipe, "set multiplot layout 2,1\n");
+  /* Titulo del primer grafico */
   fprintf(gnuplotPipe, "set title \"Diarios\"\n");
+  /* Grafico con lineas sin leyenda */
   fprintf(gnuplotPipe, "plot \"diarios.temp\" u 1:2 w lines notitle\n");
+  /* Titulo del segundo grafico */
   fprintf(gnuplotPipe, "set title \"Acumulados\"\n");
+  /* Grafico con lineas sin leyenda */
   fprintf(gnuplotPipe, "plot \"acum.temp\" u 1:2 w lines notitle\n");
-  fflush(gnuplotPipe);
+  fflush(gnuplotPipe); /* Ejecuta todo */
 }
 
-void graficar(Fechas* tabla, struct tm** fechas, char* lugar, struct tm** lims) {
+/* Recibe una tabla de fechas, un puntero a estructuras de fecha,
+un string de lugar y un puntero a estructuras de fechas limite
+e intenta graficar la evolucion de casos confirmados diarios y acumulados
+del lugar entre las fechas */
+void graficar(Fechas* tabla, struct tm** fechas, wchar_t* lugar, struct tm** lims) {
+  /* Si no hay elementos en la tabla no se puede buscar */
   if (!tabla->numElems) {
     printf("\nERROR: no hay dataset cargado\n\n");
     return;
   }
-
+  /* Calcula que pueda haber registros entre las fechas ingresadas
+  buscando interseccion con las fechas limite */
   int orden = (dias(lims[1], lims[0]) > 0);
   if (dias(fechas[0], lims[orden]) > 0 || dias(lims[1 - orden], fechas[1]) > 0) {
     printf("\nERROR: No hay registros entre las fechas\n\n");
     return;
   }
+  /* Si hay interseccion pero alguna de las fechas esta fuera de los limites,
+  la reemplaza por el limite */
   if (dias(fechas[1], lims[orden]) > 0)
     actualizar_fecha(fechas[1], lims[orden]);
   if (dias(lims[1 - orden], fechas[0]) > 0)
     actualizar_fecha(fechas[0], lims[1 - orden]);
-
+  /* Abre los archivos donde imprimir los datos a graficar */
   FILE* fp[2];
   fp[0] = fopen("diarios.temp", "w");
   fp[1] = fopen("acum.temp", "w");
-
+  /* Se inicializa una estructura de fecha para buscar en la tabla */
   struct tm* f = malloc(sizeof(struct tm));
   memset(f, 0, sizeof(struct tm));
+  /* Se guarda la fecha inicial en la estructura */
   actualizar_fecha(f, fechas[0]);
 
-  int acum = 0;
-  int fin = 0;
-  CasillaFecha* casilla;
-
+  int acum = 0; /* Variable de casos acumulados hasta la fecha */
+  int fin = 0; /* Flag que indica si se llego a la ultima fecha */
+  CasillaFecha* casilla; /* Puntero para simplificar luego el codigo */
+  /* Calcula la primera posicion y empieza a buscar */
   int idx = abs(dias(fechas[0], tabla->fechas[0].fecha));
   for(; !fin; idx = abs(dias(f, tabla->fechas[0].fecha))) {
+    /* Si se llego a la ultima fecha, setea el fin */
     if (igual_fecha(f, fechas[1]))
       fin = 1;
     /* Guarda un puntero a la casilla por simplicidad */
     casilla = &tabla->fechas[idx];
+    /* Si hay tabla en la casilla, compara las fechas */
     if (casilla->tabla) {
-      if (igual_fecha(f, casilla->fecha) && casilla->sig)
+      /* Si no es la misma fecha pero hay otra casilla en la lista,
+      debe ser la de la fecha */
+      if (!igual_fecha(f, casilla->fecha) && casilla->sig)
         casilla = casilla->sig;
+      /* Busca registro del lugar y si halla imprime los datos
+      en los archivos */
       int* notifs = lugares_buscar(casilla->tabla, lugar);
       if (notifs && *notifs - acum > 0) {
+        /* Los casos diarios son la diferencia entre los acumulados del dia
+        y los acumulados de antes */
         fprintf(fp[0], "%d-%d-%d %d\n",
           f->tm_year+1900, f->tm_mon+1, f->tm_mday, *notifs - acum);
         fprintf(fp[1], "%d-%d-%d %d\n",
           f->tm_year+1900, f->tm_mon+1, f->tm_mday, *notifs);
+        /* Actualiza la cantidad acumulada */
         acum = *notifs;
       }
     }
+    /* Sigue con el proximo dia */
     agregar_dias(f, 1);
   }
   fclose(fp[0]);
   fclose(fp[1]);
 
+  /* Abre gnuplot y envia los comandos */
   FILE* gnuplotPipe = popen("gnuplot -persistent", "w");
   comandos_gnuplot(gnuplotPipe, fechas);
   fclose(gnuplotPipe);
