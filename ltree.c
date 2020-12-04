@@ -5,53 +5,37 @@
 
 #define CONT 10
 
+/* Inicializa un arbol */
 LTree ltree_crear() {
   return NULL;
 }
 
+/* Funcion de maximo */
 int max(int a, int b) {
   return (a > b)? a : b;
 }
 
+/* Calcula recursivamente la altura del arbol */
 int ltree_altura(LTree lt) {
   if (lt == NULL)
     return -1;
   return 1 + max(ltree_altura(lt->left), ltree_altura(lt->right));
 }
 
-void ltree_print_aux(LTree lt, int espacio) {
-    if (lt == NULL)
-        return;
-    // Increase distance between levels
-    espacio += CONT;
-
-    ltree_print_aux(lt->right, espacio);
-
-    // Print current node after space
-    // count
-    printf("\n");
-    for (int i = CONT; i < espacio; i++)
-        printf(" ");
-    printf("%s\n", lt->lugar);
-
-    ltree_print_aux(lt->left, espacio);
-}
-
-void ltree_print(LTree lt) {
-   // Pass initial space count as 0
-   ltree_print_aux(lt, 0);
-}
-
+/* Devuelve el minimo string en el arbol
+(el mas a la izquierda) */
 char* ltree_minimo(LTree lt) {
-  if (lt == NULL) {
-    printf("ERROR: arbol vacio\n");
+  /* Si es arbol vacio no hay minimo */
+  if (!lt)
     return NULL;
-  }
-  if (lt->left == NULL)
+
+  if (!lt->left)
     return lt->lugar;
+
   return ltree_minimo(lt->left);
 }
 
+/* Funcion de rotacion derecha para balanceo */
 LTree ltree_rotar_der(LTree lt) {
   LTree left = lt->left;
   LTree lr = left->right;
@@ -62,6 +46,7 @@ LTree ltree_rotar_der(LTree lt) {
   return left;
 }
 
+/* Funcion de rotacion izquierda para balanceo */
 LTree ltree_rotar_izq(LTree lt) {
   LTree right = lt->right;
   LTree rl = right->left;
@@ -72,7 +57,11 @@ LTree ltree_rotar_izq(LTree lt) {
   return right;
 }
 
+/* Recibe un arbol y un puntero a string,
+si no halla el string en el arbol lo inserta,
+sino libera el string y lo reemplaza por el preexistente en el puntero */
 LTree ltree_insertar(LTree lt, char** lugar) {
+  /* Si el arbol es vacio inserta el string en el primer nodo */
   if (!lt) {
     LTree nodo = malloc(sizeof(LTNodo));
     nodo->lugar = *lugar;
@@ -81,22 +70,28 @@ LTree ltree_insertar(LTree lt, char** lugar) {
     return nodo;
   }
 
+  /* Si el string es alfabeticamente menor al del nodo,
+  sigue buscando a la izquierda */
   if (strcmp(*lugar, lt->lugar) < 0)
     lt->left = ltree_insertar(lt->left, lugar);
+  /* Si es mayor, a la derecha */
   else if (strcmp(*lugar, lt->lugar) > 0)
     lt->right = ltree_insertar(lt->right, lugar);
+  /* Sino es el mismo, asi que se lo reemplaza */
   else {
     free(*lugar);
     *lugar = lt->lugar;
     return lt;
   }
 
+  /* Se calcula el balance del arbol */
   int dif = ltree_altura(lt->left) - ltree_altura(lt->right);
-
+  /* Si es necesario se balancea */
   if (dif > 1) {
     if (strcmp(*lugar, lt->left->lugar) > 0)
       lt->left = ltree_rotar_izq(lt->left);
     return ltree_rotar_der(lt);
+
   } else if (dif < -1) {
     if (strcmp(*lugar, lt->right->lugar) < 0)
       lt->right = ltree_rotar_der(lt->right);
@@ -106,104 +101,9 @@ LTree ltree_insertar(LTree lt, char** lugar) {
   return lt;
 }
 
-LTree ltree_eliminar(LTree lt, char* lugar) {
-  if (lt == NULL)
-    return lt;
-
-  if (strcmp(lugar, lt->lugar) < 0) {
-    lt->left = ltree_eliminar(lt->left, lugar);
-  } else if (strcmp(lugar, lt->lugar) > 0) {
-    lt->right = ltree_eliminar(lt->right, lugar);
-  } else {
-    if (lt->right == NULL) {
-      LTree temp = lt;
-      lt = lt->left;
-      free(temp);
-    } else {
-      char* nuevoDato = ltree_minimo(lt->right);
-      lt->lugar = nuevoDato;
-      lt->right = ltree_eliminar(lt->right, nuevoDato);
-    }
-  }
-
-  if (lt == NULL)
-    return lt;
-
-  int dif = ltree_altura(lt->left) - ltree_altura(lt->right);
-
-  if (dif > 1) {
-    if (ltree_altura(lt->left->left) - ltree_altura(lt->left->right) < 0)
-      lt->left = ltree_rotar_izq(lt->left);
-    return ltree_rotar_der(lt);
-  } else if (dif < -1) {
-    if (ltree_altura(lt->right->left) - ltree_altura(lt->right->right) > 0)
-      lt->right = ltree_rotar_der(lt->right);
-    return ltree_rotar_izq(lt);
-  }
-  return lt;
-}
-
-int ltree_contiene(LTree lt, char* lugar) {
-  if (lt == NULL)
-    return 0;
-  if (!strcmp(lugar, lt->lugar))
-    return 1;
-  if (strcmp(lugar, lt->lugar) < 0) {
-    return ltree_contiene(lt->left, lugar);
-  } else {
-    return ltree_contiene(lt->right, lugar);
-  }
-}
-
-int ltree_nelementos(LTree lt) {
-  if (lt == NULL)
-    return 0;
-  return 1 + ltree_nelementos(lt->left) + ltree_nelementos(lt->right);
-}
-
-void ltree_recorrer(LTree lt, FuncionVisitante visit) {
-  if (lt == NULL)
-    return;
-  ltree_recorrer(lt->left, visit);
-  visit(lt->lugar);
-  ltree_recorrer(lt->right, visit);
-}
-
-void imprimir_string(char* data) {
-  printf("%s ", data);
-}
-
-void ltree_imprimir(LTree lt) {
-  ltree_recorrer(lt, imprimir_string);
-}
-
-char* ltree_acceder_aux(LTree lt, int indice, int* actual) {
-  char* lugar;
-  if (lt->left != NULL)
-    lugar = ltree_acceder_aux(lt->left, indice, actual);
-  (*actual) = (*actual) + 1;
-  if (indice < *actual) {
-    return lugar;
-  } else if (indice == *actual) {
-    return lt->lugar;
-  } else if (lt->right != NULL) {
-    return ltree_acceder_aux(lt->right, indice, actual);
-  }
-  return NULL;
-}
-
-char* ltree_acceder(LTree lt, int indice) {
-  if (lt == NULL) {
-    printf("ERROR: arbol vacio\n");
-    return NULL;
-  }
-
-  int actual = -1;
-  return ltree_acceder_aux(lt, indice, &actual);
-}
-
+/* Destruye un arbol y todos sus strings recursivamente */
 void ltree_destruir(LTree lt) {
-  if (lt == NULL)
+  if (!lt)
     return;
 
   //printf("Elimino %s\n", lt->lugar);

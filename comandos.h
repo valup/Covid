@@ -9,7 +9,7 @@ LTree cargar_dataset(Fechas* tabla, LTree lt, char* archivo, struct tm** lims);
 
 void imprimir_dataset(Fechas* tabla, LTree lt, char* archivo, struct tm** lims);
 
-LTree agregar_registro(Fechas* tabla, LTree lt, char** args, int* notifs, struct tm** lims);
+LTree agregar_registro(Fechas* tabla, LTree lt, char** args, struct tm** lims);
 
 void eliminar_registro(Fechas* tabla, struct tm* fecha, char* lugar);
 

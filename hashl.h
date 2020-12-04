@@ -8,13 +8,21 @@ typedef unsigned (*FuncionHash)(char* clave);
 
 typedef unsigned (*FuncionPaso)(char* clave);
 
-typedef struct _CasillaHash {
+/* CasillaLugar es una casilla de hash
+con string (lugar) como clave y notificaciones de casos
+(puntero a int para guardar 3 int) como dato */
+typedef struct _CasillaLugar {
   char* lugar;
   int* notifs;
-} CasillaHash;
+} CasillaLugar;
 
+/* Lugares es una tabla hash hecha para guardar
+estructuras CasillaLugar */
+/* Para comparacion se usa !strcmp
+y se considero innecesario incluirla como funcion
+en la estructura para este programa */
 typedef struct {
-  CasillaHash* lugares;
+  CasillaLugar* lugares;
   unsigned numElems;
   unsigned capacidad;
   FuncionHash hash;

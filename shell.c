@@ -29,10 +29,16 @@ LTree procesar(Fechas* tabla, LTree lt, char* buf, struct tm** lims) {
   }
 
   if (!strcmp(com, "cargar_dataset")) {
+    double comienzo = clock();
     lt = cargar_dataset(tabla, lt, arg, lims);
+    double final = clock();
+    printf("%f segundos\n", (final - comienzo) / CLOCKS_PER_SEC);
 
   } else if (!strcmp(com, "imprimir_dataset")) {
+    double comienzo = clock();
     imprimir_dataset(tabla, lt, arg, lims);
+    double final = clock();
+    printf("%f segundos\n", (final - comienzo) / CLOCKS_PER_SEC);
 
   } else if (!strcmp(com, "agregar_registro")) {
     char* resto = marcar_fecha(arg);
@@ -57,16 +63,7 @@ LTree procesar(Fechas* tabla, LTree lt, char* buf, struct tm** lims) {
     args[1] = strtok(NULL, "|");
     args[2] = strtok(NULL, "\n");
 
-    int* notifs = malloc(sizeof(int) * 3);
-    int read = sscanf(args[2], "%d|%d|%d", notifs, &notifs[1], &notifs[2]);
-    if (read < 3) {
-      printf("\nERROR: Numero invalido.\n");
-      printf("Ingrese help para mas informacion.\n\n");
-      free(notifs);
-      return lt;
-    }
-
-    lt = agregar_registro(tabla, lt, args, notifs, lims);
+    lt = agregar_registro(tabla, lt, args, lims);
 
   } else if (!strcmp(com, "eliminar_registro")) {
     char* resto = marcar_fecha(arg);
@@ -162,7 +159,8 @@ LTree procesar(Fechas* tabla, LTree lt, char* buf, struct tm** lims) {
 
     args[1] = strtok(NULL, "|");
 
-    tiempo_duplicacion(tabla, tm, args[1], lims[0]);
+    int orden = (dias(lims[1], lims[0]) < 0);
+    tiempo_duplicacion(tabla, tm, args[1], lims[orden]);
     free(tm);
 
   } else if (!strcmp(com, "graficar")) {
@@ -200,10 +198,12 @@ LTree procesar(Fechas* tabla, LTree lt, char* buf, struct tm** lims) {
         return lt;
       }
     }
+    if (dias(tm[1], tm[0]) > 0) {
+      args[2] = strtok(NULL, "\n");
+      graficar(tabla, tm, args[2], lims);
+    } else
+      printf("\nERROR: Orden incorrecto de fechas.\n\n");
 
-    args[2] = strtok(NULL, "\n");
-
-    graficar(tabla, tm, args[2], lims);
     free(tm[0]);
     free(tm[1]);
 
