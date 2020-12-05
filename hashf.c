@@ -59,8 +59,9 @@ Fechas* fechas_crear(int capacidad) {
   tabla->capacidad = capacidad;
   tabla->numElems = 0;
   tabla->fechas = malloc(sizeof(CasillaFecha) * capacidad);
-
-  /* se inicializan las casillas con datos nulos */
+  /* se inicializan la referencia y las casillas con datos nulos */
+  tabla->ref = malloc(sizeof(struct tm));
+  memset(tabla->ref, 0, sizeof(struct tm));
   for (int idx = 0; idx < capacidad; ++idx) {
     tabla->fechas[idx].fecha = NULL;
     tabla->fechas[idx].tabla = NULL;
@@ -79,12 +80,13 @@ void fechas_insertar(Fechas* tabla, wchar_t* lugar, struct tm* fecha, int* notif
     tabla->numElems++;
     tabla->fechas[0].fecha = fecha;
     tabla->fechas[0].tabla = lugares_crear(LUGARES_INI, hash, paso);
+    actualizar_fecha(tabla->ref, fecha);
     lugares_insertar(tabla->fechas[0].tabla, lugar, notifs);
     return;
   }
   /* La posicion se calcula como el modulo de la distancia
   en dias respecto a la fecha guardada en la primera posicion */
-  int idx = abs(dias(fecha, tabla->fechas[0].fecha));
+  int idx = abs(dias(fecha, tabla->ref));
   /* Si la posicion buscada supera el limite de la tabla, se la realoca
   (no es necesario rehashear porque la distancia respecto
   a la fecha de referencia se mantiene) */
@@ -104,9 +106,8 @@ void fechas_insertar(Fechas* tabla, wchar_t* lugar, struct tm* fecha, int* notif
       para seguir utilizando la fecha a insertar luego de la funcion */
       free(casilla->fecha);
       casilla->fecha = fecha;
-      /* Se puede asumir que si habia fecha en la casilla tambien
-      se creo una tabla para lugares, ya que aun si se eliminan
-      todos los lugares de la fecha uno por uno, no se elimina la tabla */
+      /* Si estaba la fecha tambien debe estar la tabla
+      y no es necesario crear una */
       lugares_insertar(casilla->tabla, lugar, notifs);
       return;
     }
@@ -133,6 +134,48 @@ void fechas_insertar(Fechas* tabla, wchar_t* lugar, struct tm* fecha, int* notif
   lugares_insertar(casilla->tabla, lugar, notifs);
 }
 
+/* Recibe una tabla de fechas y una fecha
+y elimina la casilla de la fecha si existe */
+void fechas_eliminar(Fechas* tabla, struct tm* fecha) {
+  /* Confirma que la tabla fue inicializada y guarda elementos */
+  if (tabla && tabla->numElems) {
+    /* Calcula la posicion de la fecha */
+    int idx = abs(dias(fecha, tabla->ref));
+    /* Confirma que la posicion esta en la tabla */
+    if (idx < tabla->capacidad) {
+      /* Guarda un puntero a la casilla por simplicidad */
+      CasillaFecha* casilla = &tabla->fechas[idx];
+      /* Confirma que hay datos en la casilla */
+      if (casilla->fecha) {
+        /* Si es la misma fecha elimina sus datos */
+        if (igual_fecha(casilla->fecha, fecha)) {
+          tabla->numElems--;
+          free(casilla->fecha);
+          lugares_destruir(casilla->tabla);
+          /* Si habia otra casilla en la lista reemplaza los datos
+          y la elimina */
+          if (casilla->sig) {
+            casilla->fecha = casilla->sig->fecha;
+            casilla->tabla = casilla->sig->tabla;
+            free(casilla->sig);
+            casilla->sig = NULL;
+          }
+        /* Si no era la misma fecha pero hay otra casilla
+        debe ser la de la fecha asi que la elimina,
+        pero no busca si hay otra casilla mas porque no pueden
+        haber mas de dos fechas en una posicion */
+        } else if (casilla->sig) {
+          tabla->numElems--;
+          free(casilla->sig->fecha);
+          lugares_destruir(casilla->sig->tabla);
+          free(casilla->sig);
+          casilla->sig = NULL;
+        }
+      }
+    }
+  }
+}
+
 /* Recibe una tabla de fechas y una fecha, la busca en la tabla
 y retorna un puntero a la tabla de lugares que guarda,
 o en caso de no hallar retorna un puntero nulo */
@@ -141,7 +184,7 @@ Lugares* fechas_buscar(Fechas* tabla, struct tm* fecha) {
   if (!tabla->numElems)
     return NULL;
   /* Se calcula el modulo de distancia en dias respecto a la primera fecha */
-  int idx = abs(dias(fecha, tabla->fechas[0].fecha));
+  int idx = abs(dias(fecha, tabla->ref));
   /* Si supera el limite de la tabla no hay registros para la fecha */
   if (idx >= tabla->capacidad)
     return NULL;
@@ -179,5 +222,6 @@ void fechas_destruir(Fechas* tabla) {
     }
   }
   free(tabla->fechas);
+  free(tabla->ref);
   free(tabla);
 }

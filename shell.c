@@ -132,7 +132,7 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
     }
     args[1] = wcstok(NULL, L"|", &pt);
 
-    eliminar_registro(tabla, tm, args[1]);
+    eliminar_registro(tabla, tm, args[1], lims);
     free(tm);
   /* Si es buscar_pico une departamento y localidad con coma y los pasa */
   } else if (!wcscoll(com, L"buscar_pico")) {

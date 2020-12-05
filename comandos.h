@@ -12,7 +12,7 @@ void imprimir_dataset(Fechas* tabla, LTree lt, wchar_t* archivo, struct tm** lim
 
 LTree agregar_registro(Fechas* tabla, LTree lt, wchar_t** args, struct tm** lims);
 
-void eliminar_registro(Fechas* tabla, struct tm* fecha, wchar_t* lugar);
+void eliminar_registro(Fechas* tabla, struct tm* fecha, wchar_t* lugar, struct tm** lims);
 
 void buscar_pico(Fechas* tabla, wchar_t* lugar, struct tm** lims);
 

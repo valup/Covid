@@ -177,8 +177,8 @@ void imprimir_dataset(Fechas* tabla, LTree lt, wchar_t* arch, struct tm** lims) 
   int fin = 0; /* Flag para indicar si se llego al ultimo limite */
   CasillaFecha* casilla; /* Puntero para simplificar luego el codigo */
   /* Se calcula el primer indice y se empieza a buscar */
-  int idx = abs(dias(lims[0], tabla->fechas[0].fecha));
-  for(; !fin; idx = abs(dias(f, tabla->fechas[0].fecha))) {
+  int idx = abs(dias(lims[0], tabla->ref));
+  for(; !fin; idx = abs(dias(f, tabla->ref))) {
     /* Si se llego a la ultima fecha se setea el fin */
     if (igual_fecha(f, lims[1]))
       fin = 1;
@@ -257,11 +257,38 @@ LTree agregar_registro(Fechas* tabla, LTree lt, wchar_t** args, struct tm** lims
 }
 
 /* Recibe una tabla de fechas una estructura de fecha y un string de lugar,
-y si hay registros de ese lugar en esa fecha los elimina */
-void eliminar_registro(Fechas* tabla, struct tm* fecha, wchar_t* lugar) {
+si hay registros de ese lugar en esa fecha los elimina,
+y si no quedan mas registros de la fecha la elimina de la tabla */
+void eliminar_registro(Fechas* tabla, struct tm* fecha, wchar_t* lugar, struct tm** lims) {
   Lugares* lugares = fechas_buscar(tabla, fecha);
-  if (lugares)
+  if (lugares) {
     lugares_eliminar(lugares, lugar);
+    /* Si no quedan mas lugares en la fecha la elimina */
+    if (!lugares->numElems) {
+      fechas_eliminar(tabla, fecha);
+      /* Si era la primera fecha limite cambia el limite,
+      a menos que los limites sean iguales */
+      if (igual_fecha(fecha, lims[0])) {
+        /* Calcula orden de fechas */
+        int d = dias(lims[1], lims[0]);
+        /* Si es ascendente le agrega 1 dia */
+        if (d > 0) {
+          agregar_dias(lims[0], 1);
+        /* Si es descendente le quita 1 dia */
+        } else if (d < 0) {
+          agregar_dias(lims[0], -1);
+        }
+      /* Lo mismo si es la ultima */
+      } else if (igual_fecha(fecha, lims[1])) {
+        int d = dias(lims[1], lims[0]);
+        if (d > 0) {
+          agregar_dias(lims[1], -1);
+        } else if (d < 0) {
+          agregar_dias(lims[1], 1);
+        }
+      }
+    }
+  }
 }
 
 /* Recibe una tabla de fechas, un string de lugar y una estructura
@@ -294,8 +321,8 @@ void buscar_pico(Fechas* tabla, wchar_t* lugar, struct tm** lims) {
   CasillaFecha* casilla; /* Puntero para simplificar luego el codigo */
 
   /* Calcula la primera posicion y se empieza a buscar */
-  int idx = abs(dias(lims[1 - orden], tabla->fechas[0].fecha));
-  for(; !fin; idx = abs(dias(f, tabla->fechas[0].fecha))) {
+  int idx = abs(dias(lims[1 - orden], tabla->ref));
+  for(; !fin; idx = abs(dias(f, tabla->ref))) {
     /* Si se llega a la ultima fecha se setea el fin */
     if (igual_fecha(f, lims[orden]))
       fin = 1;
@@ -400,8 +427,8 @@ void tiempo_duplicacion(Fechas* tabla, struct tm* fecha, wchar_t* lugar, struct 
   int fin = 0; /* Flag que indica si se llego a la primera fecha */
   CasillaFecha* casilla; /* Puntero para simplificar luego el codigo */
   /* Calcula la posicion de comienzo y se empieza a buscar */
-  int idx = abs(dias(fecha, tabla->fechas[0].fecha));
-  for(; !fin; idx = abs(dias(f, tabla->fechas[0].fecha))) {
+  int idx = abs(dias(fecha, tabla->ref));
+  for(; !fin; idx = abs(dias(f, tabla->ref))) {
     /* Si llega a la primera fecha setea el fin */
     if (igual_fecha(f, prim))
       fin = 1;
@@ -498,8 +525,8 @@ void graficar(Fechas* tabla, struct tm** fechas, wchar_t* lugar, struct tm** lim
   int fin = 0; /* Flag que indica si se llego a la ultima fecha */
   CasillaFecha* casilla; /* Puntero para simplificar luego el codigo */
   /* Calcula la primera posicion y empieza a buscar */
-  int idx = abs(dias(fechas[0], tabla->fechas[0].fecha));
-  for(; !fin; idx = abs(dias(f, tabla->fechas[0].fecha))) {
+  int idx = abs(dias(fechas[0], tabla->ref));
+  for(; !fin; idx = abs(dias(f, tabla->ref))) {
     /* Si se llego a la ultima fecha, setea el fin */
     if (igual_fecha(f, fechas[1]))
       fin = 1;

@@ -93,6 +93,7 @@ void lugares_eliminar(Lugares* tabla, wchar_t* lugar) {
     /* Se compara por lugar porque las casillas eliminadas
     tienen puntero nulo a notificaciones pero mantienen el lugar */
     if (!wcscoll(tabla->lugares[idx].lugar, lugar) && tabla->lugares[idx].notifs) {
+      tabla->numElems--;
       free(tabla->lugares[idx].notifs);
       tabla->lugares[idx].notifs = NULL;
     }
