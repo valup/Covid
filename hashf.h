@@ -60,6 +60,11 @@ y retorna un puntero a la tabla de lugares que guarda,
 o en caso de no hallar retorna un puntero nulo */
 Lugares* fechas_buscar(Fechas* tabla, struct tm* fecha);
 
+/* Recibe una tabla y libera todos los datos que guarda
+para devolverla a su estado original.
+Se usa para destruirla o para reiniciarla luego de un error de carga */
+void fechas_vaciar(Fechas* tabla);
+
 /* Destruye la tabla y todas sus fechas y tablas */
 void fechas_destruir(Fechas* tabla);
 

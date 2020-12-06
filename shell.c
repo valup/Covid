@@ -261,26 +261,23 @@ int main() {
 
   wchar_t* buf = NULL; /* Buffer para comandos */
 
-  while (1) {
-    printf(">> ");
-    buf = wgetline(buf, stdin);
+  printf(">> ");
+  buf = wgetline(buf, stdin);
 
-    if (buf[0] != L'\n') {
+  for (;wcscoll(buf, L"salir\n"); buf = wgetline(buf, stdin)) {
 
-      if (!wcscoll(buf, L"salir\n")) {
-        fechas_destruir(tabla);
-        ltree_destruir(lt);
-        free(buf);
-        free(lims[0]);
-        free(lims[1]);
-        return 0;
-      }
-
+    if (buf[0] != L'\n')
       lt = procesar(tabla, lt, buf, lims);
-    }
 
     free(buf);
+
+    printf(">> ");
   }
 
+  fechas_destruir(tabla);
+  ltree_destruir(lt);
+  free(buf);
+  free(lims[0]);
+  free(lims[1]);
   return 0;
 }

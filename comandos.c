@@ -7,6 +7,7 @@
 #include "straux.h"
 
 LTree cargar_dataset(Fechas* tabla, LTree lt, wchar_t* archivo, struct tm** lims) {
+
   /* Convierte el nombre de archivo a char* para poder abrir el archivo */
   char* file = malloc(sizeof(char) * (wcslen(archivo) + 2));
   swscanf(archivo, L"%s", file);
@@ -36,66 +37,71 @@ LTree cargar_dataset(Fechas* tabla, LTree lt, wchar_t* archivo, struct tm** lims
     free(buf);
 
     int lim = 0; /* Flag para indicar si se guardo el primer limite */
+    int error = 0; /* Flag para indicar que hubo problema con la lectura */
 
     buf = wgetline(buf, fp);
 
-    while (!feof(fp)) {
+    while (!feof(fp) && buf[0] != L'\n') {
 
       /* Hasta la T es fecha */
       wchar_t* fecha = wcstok(buf, L"T", &pt);
       f = string_fecha(fecha);
-      if (!f) {
-        printf("\nERROR: Error de datos. No se pudo cargar toda la tabla.\n\n");
-        free(buf);
-        fclose(fp);
-        return lt;
+      if (f) {
+
+        wchar_t* depto;
+        /* Se lee dos veces para descartar la parte de 00:00:00-03:00 */
+        for (int i = 0; i < 2 && !error; i++) {
+          depto = wcstok(NULL, L",", &pt);
+          if (!depto)
+            error = 1;
+        }
+
+        if (!error) {
+
+          wchar_t* local = wcstok(NULL, L",", &pt);
+          if (local) {
+
+            wchar_t* cuenta = wcstok(NULL, L"\n", &pt);
+            int* notifs = malloc(sizeof(int) * 3);
+
+            int read = swscanf(cuenta, L"%d,%d,%d", notifs, &notifs[1], &notifs[2]);
+            if (read == 3) {
+
+              /* Si no se guardo el primer limite se actualiza con f */
+              if (!lim) {
+                actualizar_fecha(lims[0], f);
+                lim = 1;
+              }
+
+              /* Se unen el departamento y localidad en un string con coma */
+              wchar_t* lugar = unir(depto, local, L",");
+
+              /* Se intenta insertar el lugar primero en el arbol,
+              si ya estaba se libera el string y se lo reemplaza por el que estaba */
+              lt = ltree_insertar(lt, &lugar);
+              fechas_insertar(tabla, lugar, f, notifs);
+            } else {
+              free(notifs);
+              free(f);
+              error = 1;
+            }
+          } else {
+            free(f);
+            error = 1;
+          }
+        } else {
+          free(f);
+          error = 1;
+        }
       }
 
-      wchar_t* depto = wcstok(NULL, L",", &pt);
-      /* Se repite para descartar la parte de 00:00:00-03:00 */
-      depto = wcstok(NULL, L",", &pt);
-      if (!depto) {
-        printf("\nERROR: Error de datos. No se pudo cargar toda la tabla.\n\n");
-        free(buf);
-        free(f);
-        fclose(fp);
-        return lt;
+      if (error) {
+        printf(
+          "\nERROR: Hubo un problema leyendo los datos.\n\n");
+        fechas_vaciar(tabla);
+        ltree_destruir(lt);
+        return NULL;
       }
-
-      wchar_t* local = wcstok(NULL, L",", &pt);
-      if (!local) {
-        printf("\nERROR: Error de datos. No se pudo cargar toda la tabla.\n\n");
-        free(buf);
-        free(f);
-        fclose(fp);
-        return lt;
-      }
-
-      wchar_t* cuenta = wcstok(NULL, L"\n", &pt);
-      int* notifs = malloc(sizeof(int) * 3);
-      int read = swscanf(cuenta, L"%d,%d,%d", notifs, &notifs[1], &notifs[2]);
-      if (read < 3) {
-        printf("\nERROR: Error de datos. No se pudo cargar toda la tabla.\n\n");
-        free(notifs);
-        free(buf);
-        free(f);
-        fclose(fp);
-        return lt;
-      }
-
-      /* Si no se guardo el primer limite se actualiza con f */
-      if (!lim) {
-        actualizar_fecha(lims[0], f);
-        lim = 1;
-      }
-
-      /* Se unen el departamento y localidad en un string con coma */
-      wchar_t* lugar = unir(depto, local, L",");
-
-      /* Se intenta insertar el lugar primero en el arbol,
-      si ya estaba se libera el string y se lo reemplaza por el que estaba */
-      lt = ltree_insertar(lt, &lugar);
-      fechas_insertar(tabla, lugar, f, notifs);
 
       free(buf);
       buf = wgetline(buf, fp);

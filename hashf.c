@@ -190,7 +190,7 @@ Lugares* fechas_buscar(Fechas* tabla, struct tm* fecha) {
   return NULL;
 }
 
-void fechas_destruir(Fechas* tabla) {
+void fechas_vaciar(Fechas* tabla) {
 
   CasillaFecha* aux = NULL;
 
@@ -212,10 +212,19 @@ void fechas_destruir(Fechas* tabla) {
 
       lugares_destruir(aux->tabla);
       free(aux->fecha);
+      aux->tabla = NULL;
+      aux->fecha = NULL;
     }
   }
-  
-  free(tabla->fechas);
+
+  tabla->numElems = 0;
+  memset(tabla->ref, 0, sizeof(struct tm));
+}
+
+void fechas_destruir(Fechas* tabla) {
+
+  fechas_vaciar(tabla);
   free(tabla->ref);
+  free(tabla->fechas);
   free(tabla);
 }
