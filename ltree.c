@@ -1,12 +1,5 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <locale.h>
 #include "ltree.h"
 
-#define CONT 10
-
-/* Inicializa un arbol */
 LTree ltree_crear() {
   return NULL;
 }
@@ -18,15 +11,16 @@ int max(int a, int b) {
 
 /* Calcula recursivamente la altura del arbol */
 int ltree_altura(LTree lt) {
-  if (lt == NULL)
+  if (!lt)
     return -1;
+
   return 1 + max(ltree_altura(lt->left), ltree_altura(lt->right));
 }
 
 /* Devuelve el minimo string en el arbol
 (el mas a la izquierda) */
 wchar_t* ltree_minimo(LTree lt) {
-  /* Si es arbol vacio no hay minimo */
+
   if (!lt)
     return NULL;
 
@@ -58,11 +52,8 @@ LTree ltree_rotar_izq(LTree lt) {
   return right;
 }
 
-/* Recibe un arbol y un puntero a string,
-si no halla el string en el arbol lo inserta,
-sino libera el string y lo reemplaza por el preexistente en el puntero */
 LTree ltree_insertar(LTree lt, wchar_t** lugar) {
-  /* Si el arbol es vacio inserta el string en el primer nodo */
+
   if (!lt) {
     LTree nodo = malloc(sizeof(LTNodo));
     nodo->lugar = *lugar;
@@ -71,14 +62,13 @@ LTree ltree_insertar(LTree lt, wchar_t** lugar) {
     return nodo;
   }
 
-  /* Si el string es alfabeticamente menor al del nodo,
-  sigue buscando a la izquierda */
   if (wcscoll(*lugar, lt->lugar) < 0)
     lt->left = ltree_insertar(lt->left, lugar);
-  /* Si es mayor, a la derecha */
+
   else if (wcscoll(*lugar, lt->lugar) > 0)
     lt->right = ltree_insertar(lt->right, lugar);
-  /* Sino es el mismo, asi que se lo reemplaza */
+
+  /* Si encuentra el mismo lugar lo reemplaza por el preexistente */
   else {
     free(*lugar);
     *lugar = lt->lugar;
@@ -87,7 +77,7 @@ LTree ltree_insertar(LTree lt, wchar_t** lugar) {
 
   /* Se calcula el balance del arbol */
   int dif = ltree_altura(lt->left) - ltree_altura(lt->right);
-  /* Si es necesario se balancea */
+
   if (dif > 1) {
     if (wcscoll(*lugar, lt->left->lugar) > 0)
       lt->left = ltree_rotar_izq(lt->left);
@@ -102,12 +92,10 @@ LTree ltree_insertar(LTree lt, wchar_t** lugar) {
   return lt;
 }
 
-/* Destruye un arbol y todos sus strings recursivamente */
 void ltree_destruir(LTree lt) {
   if (!lt)
     return;
 
-  //printf("Elimino %s\n", lt->lugar);
   free(lt->lugar);
   ltree_destruir(lt->left);
   ltree_destruir(lt->right);

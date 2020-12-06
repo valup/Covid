@@ -1,7 +1,12 @@
 #ifndef __HASHF_H__
 #define __HASHF_H__
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
 #include "hashl.h"
+#include "straux.h"
 
 #define FECHAS_INI 365
 
@@ -29,20 +34,33 @@ typedef struct {
   int numElems;
 } Fechas;
 
+/* Recibe dos fechas y copia la segunda sobre la primera */
 void actualizar_fecha(struct tm* dest, struct tm* fuente);
 
+/* Recibe una fecha y un entero
+y le agrega/quita dias segun el entero */
 void agregar_dias(struct tm* fecha, int dias);
 
+/* Recibe dos fechas y las compara */
 int igual_fecha(struct tm* f1, struct tm* f2);
 
+/* Recibe una capacidad y crea una tabla de fechas */
 Fechas* fechas_crear(int capacidad);
 
+/* Recibe una tabla de fechas, una fecha, un lugar y notificaciones de la fecha
+e inserta las ultimas dos en una tabla asociada a la fecha dada */
 void fechas_insertar(Fechas* tabla, wchar_t* lugar, struct tm* fecha, int* notifs);
 
+/* Recibe una tabla de fechas y una fecha
+y elimina la casilla de la fecha si existe */
 void fechas_eliminar(Fechas* tabla, struct tm* fecha);
 
+/* Recibe una tabla de fechas y una fecha, la busca en la tabla
+y retorna un puntero a la tabla de lugares que guarda,
+o en caso de no hallar retorna un puntero nulo */
 Lugares* fechas_buscar(Fechas* tabla, struct tm* fecha);
 
+/* Destruye la tabla y todas sus fechas y tablas */
 void fechas_destruir(Fechas* tabla);
 
 #endif
