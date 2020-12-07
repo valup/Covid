@@ -1,12 +1,22 @@
-all: shell
+CC = gcc
+FLAGS = -Wall -std=c99 -Wextra
+VFLAGS = --tool=memcheck --leak-check=full -v
 
-leaks: shell
-	valgrind --tool=memcheck --leak-check=full  --show-leak-kinds=all --track-origins=yes -v ./shell
+shell: shell.c
+	$(CC) -c shell.c -o $(FLAGS) shell
 
-try: shell
-	./shell
-	rm shell
-	
+ltree.o: ltree.c ltree.h
+	$(CC) -c ltree.c
 
-shell: shell.c comandos.c comandos.h straux.c straux.h ltree.c ltree.h hashf.c hashf.h hashl.c hashl.h
-	gcc -Wall -std=c99 -Wextra comandos.c straux.c ltree.c hashl.c hashf.c shell.c -o shell
+hashl.o: hashl.c hashl.h
+	$(CC) -c hashl.c
+
+straux.o: straux.c straux.h
+	$(CC) -c straux.c
+
+leaks: $(SHELL)
+	valgrind $(VFLAGS) ./$(SHELL)
+
+clean:
+	rm *.o
+
