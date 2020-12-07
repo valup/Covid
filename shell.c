@@ -1,14 +1,8 @@
-#define  _GNU_SOURCE
-#include <stdio.h>
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
 #include <locale.h>
-#include "hashf.h"
-#include "ltree.h"
-#include "comandos.h"
-#include "straux.h"
+#include "libs/comandos.h"
+
+/* gcc -Wall -std=c99 -Wextra libs/comandos.c libs/straux.c libs/ltree.c libs/hashl.c libs/hashf.c shell.c -o shell
+valgrind --tool=memcheck --leak-check=full  --show-leak-kinds=all --track-origins=yes -v ./shell */
 
 /* Imprime informacion sobre el programa */
 void help() {
@@ -55,6 +49,7 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
   wchar_t* arg = wcstok(NULL, L"\n", &pt); /* Toma los otros argumentos */
 
   if (arg) {
+
     if (!wcscoll(com, L"cargar_dataset")) {
       double comienzo = clock();
       return cargar_dataset(tabla, lt, arg, lims);
@@ -107,8 +102,8 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
 
             eliminar_registro(tabla, tm, args[1], lims);
             free(tm);
-            return lt;
           }
+          return lt;
         }
       }
 
@@ -139,12 +134,12 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
               casos_acumulados(tabla, tm, args[1]);
 
             } else
-              printf("\nERROR: No hay registros de %d-%d-%d.\n\n",
+              printf("\nERROR: No hay registros de %d-%02d-%02d.\n\n",
               tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
 
             free(tm);
-            return lt;
           }
+          return lt;
         }
       }
 
@@ -170,18 +165,18 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
               tiempo_duplicacion(tabla, tm, args[1], lims[orden]);
 
             } else
-              printf("\nERROR: No hay registros de %d-%d-%d.\n\n",
+              printf("\nERROR: No hay registros de %d-%02d-%02d.\n\n",
               tm->tm_year+1900, tm->tm_mon+1, tm->tm_mday);
 
             free(tm);
-            return lt;
           }
+          return lt;
         }
       }
 
     } else if (!wcscoll(com, L"graficar")) {
 
-      wchar_t* resto;
+      wchar_t* resto = arg;
       for (int i = 0; i < 2; i++) {
         resto = marcar_fecha(resto);
         if (!resto) {
@@ -205,8 +200,6 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
 
               tm[i] = string_fecha(args[i]);
               if (!tm[i]) {
-                printf("\nERROR: Faltan argumentos.\n");
-                printf("Ingrese help para mas informacion.\n\n");
                 if (i == 1)
                   free(tm[0]);
                 return lt;
