@@ -52,9 +52,10 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
 
     if (!wcscoll(com, L"cargar_dataset")) {
       double comienzo = clock();
-      return cargar_dataset(tabla, lt, arg, lims);
+      lt = cargar_dataset(tabla, lt, arg, lims);
       double final = clock();
       printf("%f segundos\n", (final - comienzo) / CLOCKS_PER_SEC);
+      return lt;
 
     } else if (!wcscoll(com, L"imprimir_dataset")) {
       double comienzo = clock();
