@@ -5,7 +5,7 @@ explicada en el informe
 usada para la creacion de tablas de lugar */
 size_t hash(wchar_t* str) {
 
-  const size_t p = 53;
+  const size_t p = 223;
   size_t pow = 1, len = wcslen(str), total = 0;
 
   for (size_t i = 0; i < len; i++) {
