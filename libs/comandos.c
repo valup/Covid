@@ -147,9 +147,8 @@ void imprimir_dataset(Fechas* tabla, LTree lt, wchar_t* arch, struct tm** lims) 
   "Fecha,Departamento,Localidad,Confirmados,Descartados,En estudio,Notificaciones\n"
   );
 
-  printf("\nDataset impreso correctamente en %ls.\n\n", arch);
-
   if (!tabla->numElems) {
+    printf("\nDataset impreso correctamente en %ls.\n\n", arch);  
     fclose(fp);
     return;
   }
@@ -193,7 +192,8 @@ void imprimir_dataset(Fechas* tabla, LTree lt, wchar_t* arch, struct tm** lims) 
     /* Se busca el siguiente dia a imprimir segun el orden */
     agregar_dias(f, orden);
   }
-
+  
+  printf("\nDataset impreso correctamente en %ls.\n\n", arch);
   fclose(fp);
   free(f);
 }
