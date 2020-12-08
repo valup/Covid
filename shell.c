@@ -79,8 +79,12 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
             args[0] = wcstok(arg, L"|", &pt);
             args[1] = wcstok(NULL, L"|", &pt);
             args[2] = wcstok(NULL, L"\n", &pt);
-
-            return agregar_registro(tabla, lt, args, lims);
+            
+            double comienzo = clock();
+            lt = agregar_registro(tabla, lt, args, lims);
+            double final = clock();
+            printf("%f segundos\n", (final - comienzo) / CLOCKS_PER_SEC);
+            return lt;
           }
         }
       }
