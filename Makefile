@@ -1,22 +1,35 @@
 CC = gcc
 FLAGS = -Wall -std=c99 -Wextra
-VFLAGS = --tool=memcheck --leak-check=full -v
+VFLAGS = --tool=memcheck --leak-check=full
+EXE = shell.o
+COMANDOS = comandos.o
+LTREE = ltree.o
+HASHF = hasf.o
+HASHL = hasl.o
+STRAUX = straux.o
 
-shell: shell.c
-	$(CC) -c shell.c -o $(FLAGS) shell
+main: shell.c $(COMANDOS) $(LTREE) $(HASHF) $(HASHL) $(STRAUX)
+	$(CC) shell.c $(COMANDOS) $(LTREE) $(HASHF) $(HASHL) $(STRAUX) -o $(EXE) $(FLAGS)
 
-ltree.o: ltree.c ltree.h
-	$(CC) -c ltree.c
+$(COMANDOS): libs/comandos.c  hashf
+	$(CC) $(FLAGS) libs/comandos.c -c -o $(COMANDOS)
 
-hashl.o: hashl.c hashl.h
-	$(CC) -c hashl.c
+$(LTREE): libs/ltree.c 
+	$(CC) $(FLAGS) libs/ltree.c -c -o $(LTREE)
 
-straux.o: straux.c straux.h
-	$(CC) -c straux.c
+$(HASHF): libs/hashf.c
+	$(CC) $(FLAGS) libs/hashf.c -c -o $(HASHF)
 
-leaks: $(SHELL)
-	valgrind $(VFLAGS) ./$(SHELL)
+$(HASHL): libs/hashl.c
+	$(CC) $(FLAGS) libs/hashl.c -c -o $(HASHL)
+
+$(STRAUX): libs/straux.c
+	$(CC) $(FLAGS) libs/straux.c -c -o $(STRAUX)
+
+leaks: $(EXE)
+	valgrind $(VFLAGS) ./$(EXE)
 
 clean:
 	rm *.o
+	rm *.temp
 
