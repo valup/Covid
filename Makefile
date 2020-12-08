@@ -1,7 +1,7 @@
 CC = gcc
 FLAGS = -Wall -std=c99 -Wextra
 VFLAGS = --tool=memcheck --leak-check=full
-EXE = shell.o
+EXE = shell
 COMANDOS = comandos.o
 LTREE = ltree.o
 HASHF = hasf.o
@@ -14,7 +14,7 @@ main: shell.c $(COMANDOS) $(LTREE) $(HASHF) $(HASHL) $(STRAUX)
 $(COMANDOS): libs/comandos.c
 	$(CC) $(FLAGS) libs/comandos.c -c -o $(COMANDOS)
 
-$(LTREE): libs/ltree.c 
+$(LTREE): libs/ltree.c
 	$(CC) $(FLAGS) libs/ltree.c -c -o $(LTREE)
 
 $(HASHF): libs/hashf.c
@@ -33,3 +33,5 @@ clean:
 	rm *.o
 	rm *.temp
 
+tiempos: $(EXE)
+	cat tiempos/tiempos.test | ./$(EXE) > tiempos/tiempos.res

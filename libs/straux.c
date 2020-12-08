@@ -76,8 +76,10 @@ struct tm* string_fecha(wchar_t* fecha) {
 
   int partes[3];
   int n = swscanf(fecha, L"%d-%d-%d", partes, &partes[1], &partes[2]);
-  if (n != 3)
+  if (n != 3) {
+    printf("\nERROR: Fecha invalida.\n\n");
     return NULL;
+  }
 
   /* Como la pandemia se comenzo a esparcir en 2020
   el año no deberia ser anterior a eso */

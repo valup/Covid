@@ -1,9 +1,6 @@
 #include <locale.h>
 #include "libs/comandos.h"
 
-/* gcc -Wall -std=c99 -Wextra libs/comandos.c libs/straux.c libs/ltree.c libs/hashl.c libs/hashf.c shell.c -o shell
-valgrind --tool=memcheck --leak-check=full  --show-leak-kinds=all --track-origins=yes -v ./shell */
-
 /* Imprime informacion sobre el programa */
 void help() {
   printf("\nComandos:\n\n");
@@ -79,7 +76,7 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
             args[0] = wcstok(arg, L"|", &pt);
             args[1] = wcstok(NULL, L"|", &pt);
             args[2] = wcstok(NULL, L"\n", &pt);
-            
+
             double comienzo = clock();
             lt = agregar_registro(tabla, lt, args, lims);
             double final = clock();
@@ -103,7 +100,7 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
           if (tm) {
 
             args[1] = wcstok(NULL, L"|", &pt);
-            
+
             double comienzo = clock();
             eliminar_registro(tabla, tm, args[1], lims);
             double final = clock();
@@ -140,7 +137,7 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
             if (dias(tm, lims[orden]) <= 0 && dias(lims[1 - orden], tm) <= 0) {
 
               args[1] = wcstok(NULL, L"|", &pt);
-              
+
               double comienzo = clock();
               casos_acumulados(tabla, tm, args[1]);
               double final = clock();
@@ -225,12 +222,12 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
             /* Confirma que la primera fecha sea anterior */
             if (dias(tm[1], tm[0]) > 0) {
               args[2] = wcstok(NULL, L"\n", &pt);
-              
+
               double comienzo = clock();
               graficar(tabla, tm, args[2], lims);
               double final = clock();
               printf("%f segundos\n", (final - comienzo) / CLOCKS_PER_SEC);
-              
+
             } else
               printf("\nERROR: Orden incorrecto de fechas.\n\n");
 

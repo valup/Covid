@@ -148,7 +148,7 @@ void imprimir_dataset(Fechas* tabla, LTree lt, wchar_t* arch, struct tm** lims) 
   );
 
   if (!tabla->numElems) {
-    printf("\nDataset impreso correctamente en %ls.\n\n", arch);  
+    printf("\nDataset impreso correctamente en %ls.\n\n", arch);
     fclose(fp);
     return;
   }
@@ -192,7 +192,7 @@ void imprimir_dataset(Fechas* tabla, LTree lt, wchar_t* arch, struct tm** lims) 
     /* Se busca el siguiente dia a imprimir segun el orden */
     agregar_dias(f, orden);
   }
-  
+
   printf("\nDataset impreso correctamente en %ls.\n\n", arch);
   fclose(fp);
   free(f);
@@ -555,10 +555,16 @@ void graficar(Fechas* tabla, struct tm** fechas, wchar_t* lugar, struct tm** lim
 
   /* Si hay interseccion pero alguna de las fechas esta fuera de los limites,
   la reemplaza por el limite */
-  if (dias(fechas[1], lims[orden]) > 0)
+  if (dias(fechas[1], lims[orden]) > 0) {
+    printf("\nWARNING: Solo hay registros hasta %d-%02d-%02d\n",
+    lims[orden]->tm_year+1900, lims[orden]->tm_mon+1, lims[orden]->tm_mday);
     actualizar_fecha(fechas[1], lims[orden]);
-  if (dias(lims[1 - orden], fechas[0]) > 0)
+  }
+  if (dias(lims[1 - orden], fechas[0]) > 0) {
+    printf("\nWARNING: Solo hay registros desde %d-%02d-%02d\n",
+    lims[1-orden]->tm_year+1900, lims[1-orden]->tm_mon+1, lims[1-orden]->tm_mday);
     actualizar_fecha(fechas[0], lims[1 - orden]);
+  }
 
   /* Abre los archivos donde imprimir los datos a graficar */
   FILE* fp[2];

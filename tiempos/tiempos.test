@@ -1,0 +1,10 @@
+cargar_dataset largo.csv
+imprimir_dataset tiempos/out.csv
+agregar_registro 2020-11-24 9 de Julio ANTONIO PINI 4 0 0
+graficar 2020-3-23 2020-11-25 La Capital SANTA FE
+buscar_pico La Capital SANTA FE
+tiempo_duplicacion 2020-11-24 9 de Julio ANTONIO PINI
+casos_acumulados 2020-11-22 Rosario ROSARIO
+eliminar_registro 2020-11-24 9 de Julio ANTONIO PINI
+salir
+
