@@ -11,7 +11,7 @@ STRAUX = straux.o
 main: shell.c $(COMANDOS) $(LTREE) $(HASHF) $(HASHL) $(STRAUX)
 	$(CC) shell.c $(COMANDOS) $(LTREE) $(HASHF) $(HASHL) $(STRAUX) -o $(EXE) $(FLAGS)
 
-$(COMANDOS): libs/comandos.c  hashf
+$(COMANDOS): libs/comandos.c
 	$(CC) $(FLAGS) libs/comandos.c -c -o $(COMANDOS)
 
 $(LTREE): libs/ltree.c 
