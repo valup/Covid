@@ -156,6 +156,7 @@ LTree cargar_dataset(Fechas* tabla, LTree lt,
 
   } else {
     printf("\nERROR: No se puede abrir el archivo.\n\n");
+    free(file);
   }
 
   return lt;
