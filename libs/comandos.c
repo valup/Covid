@@ -1,6 +1,38 @@
 #include "comandos.h"
 
-LTree cargar_dataset(Fechas* tabla, LTree lt, wchar_t* archivo, struct tm** lims) {
+/* Recibe un puntero a estructuras de fechas limite, una fecha
+y una cantidad de elementos y actualiza los limites con la fecha */
+void actualizar_lims(struct tm** lims, struct tm* f, int elems) {
+  
+  if (!elems) {
+    actualizar_fecha(lims[0], f);
+    actualizar_fecha(lims[1], f);
+
+  /* Compara la fecha con los limites segun el orden */
+  } else if (dias(lims[1], lims[0]) >= 0) {
+    /* Si es ascendente y la fecha es posterior a la ultima,
+    actualiza la ultima */
+    if (dias(f, lims[1]) > 0) {
+      actualizar_fecha(lims[1], f);
+    /* Si es anterior a la primera, actualiza la primera */
+    } else if (dias(f, lims[0]) < 0) {
+      actualizar_fecha(lims[0], f);
+    }
+
+  } else {
+    /* Si es descendente y la fecha es anterior a la ultima,
+    actualiza la ultima */
+    if (dias(f, lims[1]) < 0) {
+      actualizar_fecha(lims[1], f);
+    /* Si es posterior a la primera, actualiza la primera */
+    } else if (dias(f, lims[0]) > 0) {
+      actualizar_fecha(lims[0], f);
+    }
+  }
+}
+
+LTree cargar_dataset(Fechas* tabla, LTree lt,
+                    wchar_t* archivo, struct tm** lims) {
 
   /* Convierte el nombre de archivo a char* para poder abrir el archivo */
   char* file = malloc(sizeof(char) * (wcslen(archivo) + 2));
@@ -58,12 +90,18 @@ LTree cargar_dataset(Fechas* tabla, LTree lt, wchar_t* archivo, struct tm** lims
             wchar_t* cuenta = wcstok(NULL, L"\n", &pt);
             int* notifs = malloc(sizeof(int) * 3);
 
-            int read = swscanf(cuenta, L"%d,%d,%d", notifs, &notifs[1], &notifs[2]);
+            int read = swscanf(cuenta, L"%d,%d,%d", notifs,
+                              &notifs[1], &notifs[2]);
             if (read == 3) {
 
-              /* Si no se guardo el primer limite se actualiza con f */
+              /* Si no se guardo el primer limite se guarda f,
+              sino se intenta actualizar */
               if (!lim) {
-                actualizar_fecha(lims[0], f);
+                if (!lims[0]->tm_year) {
+                  actualizar_fecha(lims[0], f);
+                } else
+                  actualizar_lims(lims, f, tabla->numElems);
+
                 lim = 1;
               }
 
@@ -71,7 +109,8 @@ LTree cargar_dataset(Fechas* tabla, LTree lt, wchar_t* archivo, struct tm** lims
               wchar_t* lugar = unir(depto, local, L",");
 
               /* Se intenta insertar el lugar primero en el arbol,
-              si ya estaba se libera el string y se lo reemplaza por el que estaba */
+              si ya estaba se libera el string
+              y se lo reemplaza por el que estaba */
               lt = ltree_insertar(lt, &lugar);
               fechas_insertar(tabla, lugar, f, notifs);
             } else {
@@ -102,8 +141,14 @@ LTree cargar_dataset(Fechas* tabla, LTree lt, wchar_t* archivo, struct tm** lims
 
     /* Si se termino de leer el archivo y quedo fecha leida
     (no sucede si el archivo no tenia registros) se guarda el otro limite */
-    if (f)
-      actualizar_fecha(lims[1], f);
+    if (f) {
+      if (lims[1]->tm_year == 0)
+        actualizar_fecha(lims[1], f);
+      else
+        actualizar_lims(lims, f, tabla->numElems);
+
+      lim = 1;
+    }
 
     free(buf);
     fclose(fp);
@@ -137,7 +182,8 @@ void imprimir_dataset_aux(LTree lt, Lugares* t, FILE* fp, struct tm* f) {
   imprimir_dataset_aux(lt->right, t, fp, f);
 }
 
-void imprimir_dataset(Fechas* tabla, LTree lt, wchar_t* arch, struct tm** lims) {
+void imprimir_dataset(Fechas* tabla, LTree lt,
+                      wchar_t* arch, struct tm** lims) {
 
   char* file = malloc(sizeof(char) * (wcslen(arch) + 2));
   swscanf(arch, L"%s", file);
@@ -198,7 +244,8 @@ void imprimir_dataset(Fechas* tabla, LTree lt, wchar_t* arch, struct tm** lims) 
   free(f);
 }
 
-LTree agregar_registro(Fechas* tabla, LTree lt, wchar_t** args, struct tm** lims) {
+LTree agregar_registro(Fechas* tabla, LTree lt,
+                      wchar_t** args, struct tm** lims) {
 
   struct tm* f = string_fecha(args[0]);
   if (!f)
@@ -214,31 +261,7 @@ LTree agregar_registro(Fechas* tabla, LTree lt, wchar_t** args, struct tm** lims
     return lt;
   }
 
-  if (!tabla->numElems) {
-    actualizar_fecha(lims[0], f);
-    actualizar_fecha(lims[1], f);
-
-  /* Compara la fecha con los limites segun el orden */
-  } else if (dias(lims[1], lims[0]) >= 0) {
-    /* Si es ascendente y la fecha es posterior a la ultima,
-    actualiza la ultima */
-    if (dias(f, lims[1]) > 0) {
-      actualizar_fecha(lims[1], f);
-    /* Si es anterior a la primera, actualiza la primera */
-    } else if (dias(f, lims[0]) < 0) {
-      actualizar_fecha(lims[0], f);
-    }
-
-  } else {
-    /* Si es descendente y la fecha es anterior a la ultima,
-    actualiza la ultima */
-    if (dias(f, lims[1]) < 0) {
-      actualizar_fecha(lims[1], f);
-    /* Si es posterior a la primera, actualiza la primera */
-    } else if (dias(f, lims[0]) > 0) {
-      actualizar_fecha(lims[0], f);
-    }
-  }
+  actualizar_lims(lims, f, tabla->numElems);
 
   /* Aloca memoria para poder guardar el lugar */
   wchar_t* lugar = malloc(sizeof(wchar_t) * (wcslen(args[1]) + 1));
@@ -255,7 +278,8 @@ LTree agregar_registro(Fechas* tabla, LTree lt, wchar_t** args, struct tm** lims
   return lt;
 }
 
-void eliminar_registro(Fechas* tabla, struct tm* fecha, wchar_t* lugar, struct tm** lims) {
+void eliminar_registro(Fechas* tabla, struct tm* fecha,
+                      wchar_t* lugar, struct tm** lims) {
 
   Lugares* lugares = fechas_buscar(tabla, fecha);
   if (lugares) {
@@ -425,7 +449,8 @@ int tiempo_duplicacion_aux(Lugares* tabla, wchar_t* lugar, int obj) {
   return 0;
 }
 
-void tiempo_duplicacion(Fechas* tabla, struct tm* fecha, wchar_t* lugar, struct tm* prim) {
+void tiempo_duplicacion(Fechas* tabla, struct tm* fecha,
+                        wchar_t* lugar, struct tm* prim) {
 
   if (!tabla->numElems) {
     printf("\nERROR: No hay registros cargados.\n\n");
@@ -435,7 +460,7 @@ void tiempo_duplicacion(Fechas* tabla, struct tm* fecha, wchar_t* lugar, struct 
   Lugares* l = fechas_buscar(tabla, fecha);
   if (l) {
 
-    int* og = lugares_buscar(l, lugar); /* Valor original de casos acumulados */
+    int* og = lugares_buscar(l, lugar); /* Valor original de acumulados */
     if (og) {
 
       printf("\nCasos acumulados en %ls hasta %d-%02d-%02d: %d\n",
@@ -536,7 +561,8 @@ int graficar_aux(Lugares* tabla, wchar_t* lugar, int* acum) {
   return 0;
 }
 
-void graficar(Fechas* tabla, struct tm** fechas, wchar_t* lugar, struct tm** lims) {
+void graficar(Fechas* tabla, struct tm** fechas,
+              wchar_t* lugar, struct tm** lims) {
 
   if (!tabla->numElems) {
     printf("\nERROR: No hay registros cargados.\n\n");
@@ -546,7 +572,10 @@ void graficar(Fechas* tabla, struct tm** fechas, wchar_t* lugar, struct tm** lim
   /* Calcula que pueda haber registros entre las fechas ingresadas
   buscando interseccion con las fechas limite */
   int orden = (dias(lims[1], lims[0]) > 0);
-  if (dias(fechas[0], lims[orden]) > 0 || dias(lims[1 - orden], fechas[1]) > 0) {
+
+  if (dias(fechas[0], lims[orden]) > 0
+      || dias(lims[1 - orden], fechas[1]) > 0) {
+
     printf("\nERROR: No hay registros entre %d-%02d-%02d y %d-%02d-%02d.\n\n",
     fechas[0]->tm_year+1900, fechas[0]->tm_mon+1, fechas[0]->tm_mday,
     fechas[1]->tm_year+1900, fechas[1]->tm_mon+1, fechas[1]->tm_mday);
@@ -558,11 +587,14 @@ void graficar(Fechas* tabla, struct tm** fechas, wchar_t* lugar, struct tm** lim
   if (dias(fechas[1], lims[orden]) > 0) {
     printf("\nWARNING: Solo hay registros hasta %d-%02d-%02d\n",
     lims[orden]->tm_year+1900, lims[orden]->tm_mon+1, lims[orden]->tm_mday);
+
     actualizar_fecha(fechas[1], lims[orden]);
   }
   if (dias(lims[1 - orden], fechas[0]) > 0) {
     printf("\nWARNING: Solo hay registros desde %d-%02d-%02d\n",
-    lims[1-orden]->tm_year+1900, lims[1-orden]->tm_mon+1, lims[1-orden]->tm_mday);
+    lims[1-orden]->tm_year+1900, lims[1-orden]->tm_mon+1,
+    lims[1-orden]->tm_mday);
+
     actualizar_fecha(fechas[0], lims[1 - orden]);
   }
 

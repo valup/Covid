@@ -1,5 +1,5 @@
 CC = gcc
-FLAGS = -Wall -std=c99 -Wextra
+FLAGS = -Wall -Wextra -Werror -std=c99 -g
 VFLAGS = --tool=memcheck --leak-check=full
 EXE = shell
 COMANDOS = comandos.o
@@ -9,7 +9,7 @@ HASHL = hasl.o
 STRAUX = straux.o
 
 main: shell.c $(COMANDOS) $(LTREE) $(HASHF) $(HASHL) $(STRAUX)
-	$(CC) shell.c $(COMANDOS) $(LTREE) $(HASHF) $(HASHL) $(STRAUX) -o $(EXE) $(FLAGS)
+	$(CC) $(FLAGS) shell.c $(COMANDOS) $(LTREE) $(HASHF) $(HASHL) $(STRAUX) -o $(EXE)
 
 $(COMANDOS): libs/comandos.c
 	$(CC) $(FLAGS) libs/comandos.c -c -o $(COMANDOS)
@@ -32,6 +32,3 @@ leaks: $(EXE)
 clean:
 	rm *.o
 	rm *.temp
-
-tiempos: $(EXE)
-	cat tiempos/tiempos.test | ./$(EXE) > tiempos/tiempos.res

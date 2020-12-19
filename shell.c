@@ -47,17 +47,12 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
   if (arg) {
 
     if (!wcscoll(com, L"cargar_dataset")) {
-      double comienzo = clock();
-      lt = cargar_dataset(tabla, lt, arg, lims);
-      double final = clock();
-      printf("%f segundos\n", (final - comienzo) / CLOCKS_PER_SEC);
-      return lt;
+
+      return cargar_dataset(tabla, lt, arg, lims);
 
     } else if (!wcscoll(com, L"imprimir_dataset")) {
-      double comienzo = clock();
+
       imprimir_dataset(tabla, lt, arg, lims);
-      double final = clock();
-      printf("%f segundos\n", (final - comienzo) / CLOCKS_PER_SEC);
       return lt;
 
     } else if (!wcscoll(com, L"agregar_registro")) {
@@ -77,11 +72,7 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
             args[1] = wcstok(NULL, L"|", &pt);
             args[2] = wcstok(NULL, L"\n", &pt);
 
-            double comienzo = clock();
-            lt = agregar_registro(tabla, lt, args, lims);
-            double final = clock();
-            printf("%f segundos\n", (final - comienzo) / CLOCKS_PER_SEC);
-            return lt;
+            return agregar_registro(tabla, lt, args, lims);
           }
         }
       }
@@ -101,10 +92,7 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
 
             args[1] = wcstok(NULL, L"|", &pt);
 
-            double comienzo = clock();
             eliminar_registro(tabla, tm, args[1], lims);
-            double final = clock();
-            printf("%f segundos\n", (final - comienzo) / CLOCKS_PER_SEC);
             free(tm);
           }
           return lt;
@@ -112,11 +100,9 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
       }
 
     } else if (!wcscoll(com, L"buscar_pico")) {
+
       if (marcar_lugar(arg, L'\0')) {
-        double comienzo = clock();
         buscar_pico(tabla, arg, lims);
-        double final = clock();
-        printf("%f segundos\n", (final - comienzo) / CLOCKS_PER_SEC);
         return lt;
       }
 
@@ -138,10 +124,7 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
 
               args[1] = wcstok(NULL, L"|", &pt);
 
-              double comienzo = clock();
               casos_acumulados(tabla, tm, args[1]);
-              double final = clock();
-              printf("%f segundos\n", (final - comienzo) / CLOCKS_PER_SEC);
 
             } else
               printf("\nERROR: No hay registros de %d-%02d-%02d.\n\n",
@@ -172,10 +155,7 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
 
               int orden = (dias(lims[1], lims[0]) < 0);
 
-              double comienzo = clock();
               tiempo_duplicacion(tabla, tm, args[1], lims[orden]);
-              double final = clock();
-              printf("%f segundos\n", (final - comienzo) / CLOCKS_PER_SEC);
 
             } else
               printf("\nERROR: No hay registros de %d-%02d-%02d.\n\n",
@@ -190,8 +170,10 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
     } else if (!wcscoll(com, L"graficar")) {
 
       wchar_t* resto = arg;
+
       for (int i = 0; i < 2; i++) {
         resto = marcar_fecha(resto);
+
         if (!resto) {
           printf("\nERROR: Faltan argumentos.\n");
           printf("Ingrese help para mas informacion.\n\n");
@@ -223,10 +205,7 @@ LTree procesar(Fechas* tabla, LTree lt, wchar_t* buf, struct tm** lims) {
             if (dias(tm[1], tm[0]) > 0) {
               args[2] = wcstok(NULL, L"\n", &pt);
 
-              double comienzo = clock();
               graficar(tabla, tm, args[2], lims);
-              double final = clock();
-              printf("%f segundos\n", (final - comienzo) / CLOCKS_PER_SEC);
 
             } else
               printf("\nERROR: Orden incorrecto de fechas.\n\n");

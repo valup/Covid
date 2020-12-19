@@ -45,7 +45,8 @@ Fechas* fechas_crear(int capacidad);
 
 /* Recibe una tabla de fechas, una fecha, un lugar y notificaciones de la fecha
 e inserta las ultimas dos en una tabla asociada a la fecha dada */
-void fechas_insertar(Fechas* tabla, wchar_t* lugar, struct tm* fecha, int* notifs);
+void fechas_insertar(Fechas* tabla, wchar_t* lugar,
+                    struct tm* fecha, int* notifs);
 
 /* Recibe una tabla de fechas y una fecha
 y elimina la casilla de la fecha si existe */

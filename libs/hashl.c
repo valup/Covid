@@ -73,7 +73,6 @@ void lugares_eliminar(Lugares* tabla, wchar_t* lugar) {
     tienen puntero nulo a notificaciones pero mantienen el lugar */
     if (!wcscoll(tabla->lugares[idx].lugar, lugar)
       && tabla->lugares[idx].notifs) {
-
       tabla->numElems--;
       free(tabla->lugares[idx].notifs);
       tabla->lugares[idx].notifs = NULL;
@@ -99,7 +98,7 @@ void lugares_redimensionar(Lugares* tabla) {
   hasta haber movido la cantidad de elementos que tenia */
   for (size_t i = 0, j = 0; j < tabla->numElems; i++) {
 
-    if (tabla->lugares[i].lugar) {
+    if (tabla->lugares[i].notifs) {
       j++;
       idx = tabla->hash(tabla->lugares[i].lugar) % tabla->capacidad;
 
@@ -122,7 +121,7 @@ void lugares_destruir(Lugares* tabla) {
   la cantidad de entradas que tenia */
   for (size_t i = 0, j = 0; j < tabla->numElems; i++) {
 
-    if (tabla->lugares[i].lugar) {
+    if (tabla->lugares[i].notifs) {
       j++;
       free(tabla->lugares[i].notifs);
       /* No se libera el lugar porque el string apunta al mismo

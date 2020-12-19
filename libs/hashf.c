@@ -65,7 +65,8 @@ Fechas* fechas_crear(int capacidad) {
   return tabla;
 }
 
-void fechas_insertar(Fechas* tabla, wchar_t* lugar, struct tm* fecha, int* notifs) {
+void fechas_insertar(Fechas* tabla, wchar_t* lugar,
+                    struct tm* fecha, int* notifs) {
 
   /* Si es la primera fecha que se ingresa se ubica al principio
   para luego usarla de referencia para el hasheo */
